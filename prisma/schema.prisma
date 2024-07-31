@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  genderMatch String
+  tournaments Tournament[]
+  points    GamePoint[]
+  lines    PlayerLine[]
+  primaryActions GamePointAction[] @relation("Player_primaryActions")
+  secondaryActions GamePointAction[] @relation("Player_secondaryActions")
+}
+
+model PlayerLine {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId Int
+  points    GamePoint[]
+  primaryPlayers Player[]
+  // lines are unique per tournament
+  @@unique([name, tournamentId])
+}
+
+model Tournament {
+  id        Int      @id @default(autoincrement())
+  name      String        @unique
+  lines     PlayerLine[]
+  games     Game[]
+  players   Player[]
+}
+
+model Game {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  opponent  String
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId Int
+  videoFile String
+  points    GamePoint[]
+  @@unique([videoFile, tournamentId])
+}
+
+model GamePoint {
+  id        Int      @id @default(autoincrement())
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    Int
+  line      PlayerLine @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  lineId    Int
+  startTime      Int
+  endTime        Int
+  offenseDefense String
+  players   Player[]
+  actions   GamePointAction[]
+}
+
+model GamePointAction {
+  id        Int      @id @default(autoincrement())
+  time      Int
+  // "Completion", "Turnover", "Goal", "Defended", "Conceded" (their goal), "Injury"
+  type      String
+  point     GamePoint @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  pointId   Int
+  primaryPlayer    Player? @relation("Player_primaryActions", fields: [primaryPlayerId], references: [id])
+  primaryPlayerId  Int?
+  secondaryPlayer    Player? @relation("Player_secondaryActions", fields: [secondaryPlayerId], references: [id])
+  secondaryPlayerId  Int?
+}
