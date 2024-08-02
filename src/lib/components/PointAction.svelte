@@ -1,7 +1,11 @@
 <script>
+	import PointActionButton from '$lib/components/PointActionButton.svelte';
+
 	import { invalidateAll } from '$app/navigation';
+	import '$lib/buttons.css';
 
 	let state = 'waiting';
+	let actionState = null; // 'Offense' or 'Defense'
 
 	let selectedPlayerIds = [];
 	let selectedOD = null;
@@ -45,6 +49,7 @@
 			selectedPlayerIds.includes(player.id)
 		);
 
+		actionState = selectedOD;
 		goStateDoPoint();
 	}
 
@@ -77,6 +82,12 @@
 		} else if (action === 'Conceded') {
 			await submitPoint();
 			return;
+		} else if (action === 'Turnover') {
+			actionState = 'Defense';
+			return;
+		} else if (action === 'Defended') {
+			actionState = 'Offense';
+			return;
 		}
 
 		goStateDoPoint();
@@ -89,7 +100,7 @@
 		form.append('lineId', data.tournament.lines.find((line) => line.name === selectedLine).id);
 		form.append('startTime', queuedPoint.startTime);
 		form.append('endTime', currentTime);
-		selectedPlayerIds.forEach((player) => form.append('players[]', player));
+		selectedPlayerIds.forEach((player) => form.append('players', player));
 		form.append('actions', JSON.stringify(queuedPoint.actions));
 
 		let res = await fetch(`?/submitPoint`, {
@@ -173,16 +184,12 @@
 		video.pause();
 	}
 
-	$: if (selectedAction) {
-		console.log('selected action ', selectedAction);
-		let qa = queuedPoint.actions;
+	$: lastAction = queuedPoint?.actions[queuedPoint.actions.length - 1];
 
-		if (['Completion', 'Turnover', 'Goal'].includes(selectedAction)) {
-			// if the last action was a completion, auto-fill the primary player as the previous receiver
-			if (qa.length > 0 && qa[qa.length - 1].type === 'Completion') {
-				selectedPrimaryPlayer = qa[qa.length - 1].secondaryPlayer;
-				console.log('auto-filled primary player ', selectedPrimaryPlayer);
-			}
+	$: if (['Completion', 'Turnover', 'Goal'].includes(selectedAction)) {
+		// if the last action was a completion, auto-fill the primary player as the previous receiver
+		if (lastAction?.type === 'Completion') {
+			selectedPrimaryPlayer = lastAction.secondaryPlayer;
 		}
 	}
 
@@ -208,6 +215,9 @@
 	}
 
 	async function deletePoint(point) {
+		let ok = confirm('Are you sure you want to delete this point?');
+		if (!ok) return;
+
 		let form = new FormData();
 		form.append('pointId', point.id);
 
@@ -298,7 +308,7 @@
 					id="completion"
 					bind:group={selectedAction}
 					on:click={selectAction}
-					disabled={selectedAction && selectedAction !== 'Completion'}
+					disabled={(selectedAction && selectedAction !== 'Completion') || actionState == 'Defense'}
 				/>
 				<label for="completion">Completion</label>
 				<input
@@ -307,7 +317,7 @@
 					id="turnover"
 					bind:group={selectedAction}
 					on:click={selectAction}
-					disabled={selectedAction && selectedAction !== 'Turnover'}
+					disabled={(selectedAction && selectedAction !== 'Turnover') || actionState == 'Defense'}
 				/>
 				<label for="turnover">Turnover</label>
 				<input
@@ -316,7 +326,7 @@
 					id="goal"
 					bind:group={selectedAction}
 					on:click={selectAction}
-					disabled={selectedAction && selectedAction !== 'Goal'}
+					disabled={(selectedAction && selectedAction !== 'Goal') || actionState == 'Defense'}
 				/>
 				<label for="goal">Goal</label>
 				<input
@@ -325,7 +335,7 @@
 					id="defended"
 					bind:group={selectedAction}
 					on:click={selectAction}
-					disabled={selectedAction && selectedAction !== 'Defended'}
+					disabled={(selectedAction && selectedAction !== 'Defended') || actionState == 'Offense'}
 				/>
 				<label for="defended">Defended</label>
 				<input
@@ -334,7 +344,7 @@
 					id="conceded"
 					bind:group={selectedAction}
 					on:click={selectAction}
-					disabled={selectedAction && selectedAction !== 'Conceded'}
+					disabled={(selectedAction && selectedAction !== 'Conceded') || actionState == 'Offense'}
 				/>
 				<label for="conceded">Conceded</label>
 				<input
@@ -352,186 +362,73 @@
 
 			<hr />
 			{#if selectedAction == 'Completion'}
-				<p>Thrower</p>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`primary ${player.name}`}
-							bind:group={selectedPrimaryPlayer}
-						/>
-						<label for={`primary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<p>Receiver</p>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`secondary ${player.name}`}
-							bind:group={selectedSecondaryPlayer}
-							disabled={selectedPrimaryPlayer === player.id}
-						/>
-						<label for={`secondary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<hr />
-				<form>
-					{#each ['under', 'skinny', 'strike', 'swing', 'huck', 'dump'] as note}
-						<input type="radio" value={note} id={note} bind:group={selectedNote} />
-						<label for={note}>{note}</label>
-					{/each}
-				</form>
-				<form>
-					<input type="text" placeholder="Comments" bind:value={selectedComment} />
-				</form>
-				<button disabled={!selectedPrimaryPlayer || !selectedSecondaryPlayer} on:click={addAction}
+				<PointActionButton
+					bind:players={queuedPoint.players}
+					bind:selectedPrimaryPlayer
+					bind:selectedSecondaryPlayer
+					bind:selectedNote
+					bind:selectedComment
+					primaryPlayerLabel="Thrower"
+					secondaryPlayerLabel="Receiver"
+					noteLabels={['under', 'skinny', 'strike', 'swing', 'huck', 'dump']}
+				/>
+				<button disabled={!selectedPrimaryPlayer || !selectedPrimaryPlayer} on:click={addAction}
 					>Submit</button
 				>
 			{:else if selectedAction == 'Turnover'}
-				<p>Thrower</p>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`primary ${player.name}`}
-							bind:group={selectedPrimaryPlayer}
-						/>
-						<label for={`primary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<p>Receiver</p>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`secondary ${player.name}`}
-							bind:group={selectedSecondaryPlayer}
-							disabled={selectedPrimaryPlayer === player.id}
-						/>
-						<label for={`secondary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<form>
-					{#each ['drop', 'throw', 'stall', 'catch', 'miscommunication'] as note}
-						<input type="radio" value={note} id={note} bind:group={selectedNote} />
-						<label for={note}>{note}</label>
-					{/each}
-				</form>
-				<form>
-					<input type="text" placeholder="Comments" bind:value={selectedComment} />
-				</form>
+				<PointActionButton
+					bind:players={queuedPoint.players}
+					bind:selectedPrimaryPlayer
+					bind:selectedSecondaryPlayer
+					bind:selectedNote
+					bind:selectedComment
+					primaryPlayerLabel="Thrower"
+					secondaryPlayerLabel="Receiver"
+					noteLabels={['drop', 'throw', 'stall', 'catch', 'miscommunication']}
+				/>
 				<button disabled={!selectedPrimaryPlayer} on:click={addAction}>Submit</button>
 			{:else if selectedAction == 'Goal'}
-				<p>Thrower</p>
-				<sub>If it's a callahan, who caught it is the "thrower".</sub>
-
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`primary ${player.name}`}
-							bind:group={selectedPrimaryPlayer}
-						/>
-						<label for={`primary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<p>Receiver</p>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`secondary ${player.name}`}
-							bind:group={selectedSecondaryPlayer}
-							disabled={selectedPrimaryPlayer === player.id}
-						/>
-						<label for={`secondary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<form>
-					{#each ['endzone', 'huck', 'flow'] as note}
-						<input type="radio" value={note} id={note} bind:group={selectedNote} />
-						<label for={note}>{note}</label>
-					{/each}
-				</form>
-				<form>
-					<input type="text" placeholder="Comments" bind:value={selectedComment} />
-				</form>
-				<!-- Callahan could just be primary -->
+				<PointActionButton
+					bind:players={queuedPoint.players}
+					bind:selectedPrimaryPlayer
+					bind:selectedSecondaryPlayer
+					bind:selectedNote
+					bind:selectedComment
+					primaryPlayerLabel="Thrower"
+					secondaryPlayerLabel="Receiver"
+					noteLabels={['endzone', 'huck', 'flow']}
+				/>
 				<button disabled={!selectedPrimaryPlayer} on:click={addAction}>Submit</button>
+				<sub>If it's a callahan, who caught it is the "thrower".</sub>
 			{:else if selectedAction == 'Defended'}
-				<p>Defender</p>
-				<sub>Optional</sub>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`primary ${player.name}`}
-							bind:group={selectedPrimaryPlayer}
-						/>
-						<label for={`primary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<form>
-					{#each ['mark', 'block', 'poach'] as note}
-						<input type="radio" value={note} id={note} bind:group={selectedNote} />
-						<label for={note}>{note}</label>
-					{/each}
-				</form>
-				<form>
-					<input type="text" placeholder="Comments" bind:value={selectedComment} />
-				</form>
+				<PointActionButton
+					bind:players={queuedPoint.players}
+					bind:selectedPrimaryPlayer
+					bind:selectedNote
+					bind:selectedComment
+					primaryPlayerLabel="Defender"
+					noteLabels={['drop', 'throw', 'mark', 'block', 'poach']}
+				/>
 				<button on:click={addAction}>Submit</button>
 			{:else if selectedAction == 'Conceded'}
 				Point for other team
-				<form>
-					{#each ['huck', 'endzone', 'flow'] as note}
-						<input type="radio" value={note} id={note} bind:group={selectedNote} />
-						<label for={note}>{note}</label>
-					{/each}
-				</form>
-				<form>
-					<input type="text" placeholder="Comments" bind:value={selectedComment} />
-				</form>
+				<PointActionButton
+					bind:players={queuedPoint.players}
+					bind:selectedNote
+					bind:selectedComment
+					noteLabels={['endzone', 'huck', 'flow']}
+				/>
 				<button on:click={addAction}>Submit</button>
 			{:else if selectedAction == 'Injury'}
 				<p>Injured</p>
-				<form>
-					{#each queuedPoint.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`primary ${player.name}`}
-							bind:group={selectedPrimaryPlayer}
-						/>
-						<label for={`primary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-
-				<p>Substitute</p>
-				<p />
-				<form>
-					{#each data.tournament.players as player}
-						<input
-							type="radio"
-							value={player.id}
-							id={`secondary ${player.name}`}
-							bind:group={selectedSecondaryPlayer}
-							disabled={selectedPrimaryPlayer === player.id}
-						/>
-						<label for={`secondary ${player.name}`}>{player.name}</label>
-					{/each}
-				</form>
-				<form>
-					<input type="text" placeholder="Comments" bind:value={selectedComment} />
-				</form>
+				<PointActionButton
+					bind:players={queuedPoint.players}
+					bind:selectedPrimaryPlayer
+					bind:selectedSecondaryPlayer
+					bind:selectedComment
+					primaryPlayerLabel="Injured Player"
+					secondaryPlayerLabel="Substitute Player"
+				/>
 				<button
 					disabled={!selectedPrimaryPlayer || !selectedSecondaryPlayer}
 					on:click={handleInjury}>Submit</button
@@ -541,7 +438,7 @@
 		{/if}
 	</div>
 
-	<div class="col-2">
+	<div class="col-2" style="height: 20vh; overflow-y: scroll">
 		{#if queuedPoint}
 			<h2>
 				Queued {@html getTimeFormattedLink(queuedPoint.startTime)} - {@html getTimeFormattedLink(
@@ -582,38 +479,5 @@
 		min-width: 25vw;
 		overflow-y: auto;
 		padding: 10px;
-	}
-	input[type='radio'] {
-		display: none;
-		text-transform: capitalize;
-	}
-	input[type='checkbox'] {
-		display: none;
-	}
-	/* Clicking a label will select its corresponding hidden radio button
-	We can select that radio buttons sibling label and style it. */
-	input[type='radio']:checked + label {
-		background-color: #8fff6d;
-	}
-	input[type='checkbox']:checked + label {
-		background-color: #8fff6d;
-	}
-	label {
-		display: inline-block;
-		padding: 5px;
-		border: 1px solid rgb(82, 82, 82);
-		border-radius: 3px;
-		background-color: #ffffff;
-		/* width:10em; */
-		text-align: center;
-		text-transform: capitalize;
-	}
-	input[type='radio']:disabled + label {
-		background-color: #ffffff;
-		color: #bbbbbb;
-	}
-	input[type='checkbox']:disabled + label {
-		background-color: #ffffff;
-		color: #bbbbbb;
 	}
 </style>

@@ -55,6 +55,14 @@ export const actions = {
 		let offenseDefense = data.get('offenseDefense');
 		let actions = JSON.parse(data.get('actions'));
 
+		if (!gameId) error(400, 'Game ID is required');
+		if (!lineId) error(400, 'Line ID is required');
+		if (players.length < 1) error(400, 'You must select at least one player');
+		if (!startTime) error(400, 'Start time is required');
+		if (!endTime) error(400, 'End time is required');
+		if (!offenseDefense) error(400, 'Offense/Defense is required');
+		if (!actions) error(400, 'Actions are required');
+
 		await prisma.gamePoint.create({
 			data: {
 				game: { connect: { id: Number(gameId) } },
@@ -85,6 +93,9 @@ export const actions = {
 	deletePoint: async ({ request }) => {
 		const data = await request.formData();
 		let pointId = data.get('pointId');
+
+		if (!pointId) error(400, 'Point ID is required');
+
 		await prisma.gamePoint.delete({
 			where: { id: Number(pointId) }
 		});
