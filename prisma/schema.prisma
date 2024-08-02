@@ -67,8 +67,17 @@ model GamePoint {
 model GamePointAction {
   id        Int      @id @default(autoincrement())
   time      Int
+
   // "Completion", "Turnover", "Goal", "Defended", "Conceded" (their goal), "Injury"
   type      String
+
+  // Completion: "under", "huck"
+  // Turnover: "drop", "block", "badThrow"
+  // Defended: "block", "mark"
+  // Conceded: "huck", ...
+  note      String?
+  comment   String?
+
   point     GamePoint @relation(fields: [pointId], references: [id], onDelete: Cascade)
   pointId   Int
   primaryPlayer    Player? @relation("Player_primaryActions", fields: [primaryPlayerId], references: [id])

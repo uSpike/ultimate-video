@@ -32,7 +32,7 @@ const roster = [
 	['Maximilian Nytko', 'mmp'],
 	['Patrick Kopp', 'mmp'],
 	['Vikas Biliyar', 'mmp'],
-	['Zach Hallum', 'mmp'],
+	['Zach Hallum', 'mmp']
 ];
 
 async function main() {
@@ -43,7 +43,7 @@ async function main() {
 		const player = await prisma.player.create({
 			data: {
 				name: t[0],
-				genderMatch: t[1],
+				genderMatch: t[1]
 			}
 		});
 		players[t[0]] = player.id;
@@ -128,7 +128,7 @@ async function main() {
 						{ id: players['Jordan Speicher'] },
 						{ id: players['Patrick Kopp'] },
 						{ id: players['David Cann'] },
-						{ id: players['Keith McCarthy'] },
+						{ id: players['Keith McCarthy'] }
 					]
 				}
 			}
@@ -322,15 +322,6 @@ async function main() {
 			type: 'Defended',
 			pointId: g1p2.id,
 			primaryPlayerId: players['Kaylin Weber']
-		}
-	});
-
-	await prisma.gamePointAction.create({
-		data: {
-			time: 271,
-			type: 'Defended',
-			pointId: g1p2.id,
-			primaryPlayerId: players['Megan Childers']
 		}
 	});
 

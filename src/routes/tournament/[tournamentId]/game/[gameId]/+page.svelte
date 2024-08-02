@@ -3,10 +3,7 @@
 	import EventScroller from '$lib/components/EventScroller.svelte';
 	import PointAction from '$lib/components/PointAction.svelte';
 
-	import * as THREE from "three";
-
-	import { onMount } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import * as THREE from 'three';
 
 	/** @type {import('./$types').PageServerLoad} */
 	export let data;
@@ -14,7 +11,8 @@
 	let video;
 	let videoPlaying = false;
 	let perspectiveMode = false;
-	let playReady = false;
+	let showPerspectiveControls = false;
+
 	let currentTime = 0;
 	let duration = 0;
 
@@ -23,16 +21,11 @@
 	let queuedPoint = null;
 	let editMode = false;
 
-	let videoVH = 0.8;
+	let videoVH = 0.7;
 
 	function onTimeUpdate() {
 		currentTime = video.currentTime;
 		// this doesn't always get updated so update it here
-		duration = video.duration;
-		// update url
-		//let url = new URL(window.location.href);
-		//url.searchParams.set('time', Math.floor(currentTime));
-		//window.history.replaceState({}, '', url);
 	}
 
 	function goToGame(event) {
@@ -45,42 +38,6 @@
 			return;
 		}
 		editMode = !editMode;
-	}
-
-	function getTimeFormattedLink(time) {
-		let text = new Date(time * 1000).toISOString().slice(11, 19);
-		let url = `?time=${time}`;
-		return `<a href="${url}">${text}</a>`;
-	}
-
-	function getPointResult(point) {
-		for (let i = 0; i < point.actions.length; i++) {
-			if (point.actions[i].type === 'Goal') {
-				return 'Goal';
-			} else if (point.actions[i].type === 'Conceded') {
-				return 'Conceded';
-			}
-		}
-		return null;
-	}
-
-	async function deletePoint(point) {
-		let form = new FormData();
-		form.append('pointId', point.id);
-
-		console.log(JSON.stringify(form));
-		let response = await fetch(`?/deletePoint`, {
-			method: 'POST',
-			body: form
-		});
-		if (response.ok) {
-			invalidateAll();
-		} else {
-			let js = await response.json();
-			if (js.error) {
-				alert(js.error.message);
-			}
-		}
 	}
 
 	let canvas;
@@ -111,15 +68,24 @@
 	let mouseX = 0;
 	let mouseY = 0;
 
-	function onCanPlay() {
-		console.log("onCanPlay");
+	let geometry, mesh;
 
+	// force one update to get the initial values
+	let perspectiveMoved = true;
+
+	let playReady = false;
+
+	function onCanPlay() {
 		if (playReady) {
 			// only need to fire this once
 			return;
 		}
-
 		playReady = true;
+
+		duration = video.duration;
+		//let url = new URL(window.location.href);
+		//url.searchParams.set('time', Math.floor(currentTime));
+		//window.history.replaceState({}, '', url);
 
 		duration = video.duration;
 		// look for ?time in url
@@ -128,53 +94,28 @@
 		if (time) {
 			video.currentTime = time;
 		}
-		console.log(video.videoHeight);
 
 		videoHeight = video.videoHeight;
 		videoWidth = video.videoWidth;
 		//centerX = videoWidth / 2;
 		//centerY = videoHeight / 2;
-		//scale = videoWidth / window.innerWidth;
+		//scale = videoWidth / document.body.clientWidth;
 
 		initPerspectiveMode();
 	}
 
-	// function setTransform() {
-	// 	console.log("setTransform");
-	// 	let clientWidth = video.clientWidth;
-	// 	let clientHeight = video.clientHeight;
-
-	// 	let reversedScale = videoWidth / clientWidth / scale;
-
-	// 	centerX = Math.max(centerX, clientWidth / 2 * scale);
-    //     centerX = Math.min(centerX, videoWidth - clientWidth / 2 * scale);
-
-    //     if (clientHeight > videoHeight / scale) {
-    //         centerY = videoHeight / 2;
-    //     } else {
-    //         centerY = Math.max(centerY, clientHeight / 2 * scale);
-    //         centerY = Math.min(centerY, videoHeight - clientHeight / 2 * scale);
-    //     }
-    //     let translateX = (videoWidth / 2 - centerX) / scale;
-    //     let translateY = (videoHeight / 2 - centerY) / scale;
-
-    //     video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${reversedScale})`;
-	// }
-
-	let geometry, mesh;
-
 	function initPerspectiveMode() {
-		console.log("initPerspectiveMode");
+		console.log('initPerspectiveMode');
 		perspectiveMode = true;
 
 		camera = new THREE.PerspectiveCamera(
 			30,
-			window.innerWidth / window.innerHeight * 1.3,
+			(document.body.clientWidth / window.innerHeight) * 1.3,
 			1,
 			2 * videoWidth
 		);
 		let s = videoWidth / controls.focalLength;
-		console.log("s: ", s);
+		console.log('s: ', s);
 		geometry = new THREE.CylinderGeometry(
 			controls.focalLength,
 			controls.focalLength,
@@ -182,8 +123,8 @@
 			512,
 			512,
 			true,
-			(Math.PI / 2) - (s / 2),
-			s,
+			Math.PI / 2 - s / 2,
+			s
 		);
 		geometry.scale(-1, 1, 1);
 
@@ -199,7 +140,7 @@
 		scene = new THREE.Scene();
 		scene.add(mesh);
 
-		renderer = new THREE.WebGLRenderer({canvas: canvas});
+		renderer = new THREE.WebGLRenderer({ canvas: canvas });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		onWindowResize();
 
@@ -212,13 +153,10 @@
 		geometry.radiusTop = controls.focalLength;
 		geometry.radiusBottom = controls.focalLength;
 		geometry.thetaLength = s;
-		geometry.thetaStart = (Math.PI / 2) - (s / 2);
+		geometry.thetaStart = Math.PI / 2 - s / 2;
 		mesh.rotation.z = THREE.MathUtils.degToRad(controls.screenVerticalRotation);
 		mesh.rotation.x = THREE.MathUtils.degToRad(controls.screenHorizontalRotation);
 	}
-
-	// force one update to get the initial values
-	let perspectiveMoved = true;
 
 	function updatePerspectiveMode() {
 		if (!perspectiveMode) {
@@ -288,9 +226,9 @@
 	}
 
 	function onWindowResize() {
-		camera.aspect = window.innerWidth / window.innerHeight * (1 / videoVH);
+		camera.aspect = (document.body.clientWidth / window.innerHeight) * (1 / videoVH);
 		camera.updateProjectionMatrix();
-		renderer.setSize(window.innerWidth, window.innerHeight * videoVH);
+		renderer.setSize(document.body.clientWidth, window.innerHeight * videoVH);
 		//scale = videoWidth / video.clientWidth;
 		//setTransform();
 	}
@@ -306,7 +244,7 @@
 		videoPlaying = false;
 	}
 	function onKeypress(event) {
-		if (event.key === ' ') {
+		if (event.key === 'p') {
 			if (videoPlaying) {
 				video.pause();
 			} else {
@@ -316,116 +254,132 @@
 	}
 </script>
 
-<svelte:window on:resize={onWindowResize} on:keypress={onKeypress}/>
+<svelte:window on:resize={onWindowResize} on:keypress={onKeypress} />
 
 <div>
-	<video
-		bind:this={video}
-		on:timeupdate={onTimeUpdate}
-		on:canplay={onCanPlay}
-		on:play={onPlay}
-		on:pause={onPause}
-		style="display: {perspectiveMode ? 'none' : 'block'}"
-		crossorigin="anonymous"
-		src={data.game.videoFile}
-		preload="auto"
-		controls
-	>
+	<!-- style="display: flex; flex-flow:column; height: 100%; width: 100%"> -->
+	<div>
+		<video
+			bind:this={video}
+			on:timeupdate={onTimeUpdate}
+			on:canplay={onCanPlay}
+			on:play={onPlay}
+			on:pause={onPause}
+			style="display: {perspectiveMode ? 'none' : 'block'}"
+			crossorigin="anonymous"
+			src={data.game.videoFile}
+			preload="auto"
+			controls
+		>
+			<track kind="captions" />
+			Your browser is not supported.
+		</video>
 
-		<track kind="captions" />
-		Your browser is not supported.
-	</video>
-
-	<canvas
-		bind:this={canvas}
-		on:mousedown={onCanvasMouseDown}
-		on:mousemove={onCanvasMouseMove}
-		on:mouseup={onCanvasMouseUp}
-		on:wheel={onCanvasWheel}
-		style="display: {perspectiveMode ? 'block' : 'none'}"
-	/>
-
-</div>
-
-<div>
-	<button disabled={!playReady || videoPlaying} on:click={() => video.play()}>Play</button>
-	<button disabled={!videoPlaying} on:click={() => video.pause()}>Pause</button>
-	<button on:click={() => (video.currentTime -= 5)}>&lt;&lt; 5s</button>
-	<button on:click={() => (video.currentTime += 10)}>&gt;&gt; 10s</button>
-	<button on:click={() => (video.currentTime += 30)}>&gt;&gt; 30s</button>
-	|
-	<button class="mode" disabled={perspectiveMode} on:click={switchMode}>Perspective Mode</button>
-	<button class="mode" disabled={!perspectiveMode} on:click={switchMode}>Normal Mode</button> |
-	{#if perspectiveMode}
-		<div class="slidecontainer">
-			<input type="range" min="-90" max="90" class="slider" id="screenVerticalRotation" bind:value={controls.screenVerticalRotation} on:input={updateControls}>
-			<label for="screenVerticalRotation">Screen Vertical Rotation {controls.screenVerticalRotation}</label>
-			<input type="range" min="-90" max="90" class="slider" id="screenHorizontalRotation" bind:value={controls.screenHorizontalRotation} on:input={updateControls}>
-			<label for="screenHorizontalRotation">Screen Horizontal Rotation {controls.screenHorizontalRotation}</label>
-			<input type="range" min="-500" max="500" class="slider" id="cameraY" bind:value={controls.cameraY} on:input={updateControls}>
-			<label for="cameraY">Camera Y {controls.cameraY}</label>
-			<input type="range" min="1000" max="5000" class="slider" id="focalLength" bind:value={controls.focalLength} on:input={updateControls}>
-			<label for="focalLength">Focal Length {controls.focalLength}</label>
-		</div>
-	{/if}
-</div>
-
-<hr />
-
-<ProgressBar bind:video bind:currentTime bind:duration bind:data bind:queuedPoint />
-
-<a href="/tournament/{data.tournament.id}">{data.tournament.name}</a> |
-
-<form style="display:inline">
-	<select bind:value={selectedGame} on:change={goToGame}>
-		{#each data.tournament.games as game}
-			{#if game.id === data.game.id}
-				<option value={game.id} selected>{game.opponent}</option>
-			{:else}
-				<option value={game.id}>{game.opponent}</option>
-			{/if}
-		{/each}
-	</select>
-</form>
-|
-
-<button class="mode" disabled={!editMode} on:click={toggleEditMode}>View Mode</button>
-<button class="mode" disabled={editMode} on:click={toggleEditMode}>Edit Mode</button>
-
-<hr />
-
-<div class="box">
-	<div id="col-1">
-		{#if editMode}
-			<PointAction bind:data bind:video bind:currentTime bind:queuedPoint />
-		{/if}
+		<canvas
+			bind:this={canvas}
+			on:mousedown={onCanvasMouseDown}
+			on:mousemove={onCanvasMouseMove}
+			on:mouseup={onCanvasMouseUp}
+			on:wheel={onCanvasWheel}
+			style="display: {perspectiveMode ? 'block' : 'none'}"
+		/>
 	</div>
-	<div id="col-2">
-		{#if !editMode}
-			<EventScroller bind:currentTime bind:points={data.points} bind:video />
-		{:else}
-			<div style="overflow-y: auto;">
-				{#if queuedPoint}
-					<h2>Queued {@html getTimeFormattedLink(queuedPoint.startTime)} - {@html getTimeFormattedLink(currentTime)}</h2>
-					{#if queuedPoint.lineId}
-						<p>Line: {data.tournament.lines.find((line) => line.id === queuedPoint.lineId)?.name}</p>
-					{/if}
-					{#if queuedPoint.players}
-						<p>Players: {queuedPoint.players?.map((player) => player.name).join(', ')}</p>
-					{/if}
+
+	<div>
+		<button disabled={!playReady || videoPlaying} on:click={() => video.play()}>Play</button>
+		<button disabled={!videoPlaying} on:click={() => video.pause()}>Pause</button>
+		<button on:click={() => (video.currentTime -= 5)}>&lt;&lt; 5s</button>
+		<button on:click={() => (video.currentTime += 10)}>&gt;&gt; 10s</button>
+		<button on:click={() => (video.currentTime += 30)}>&gt;&gt; 30s</button>
+		|
+		<button class="mode" disabled={perspectiveMode} on:click={switchMode}>Perspective Mode</button>
+		<button class="mode" disabled={!perspectiveMode} on:click={switchMode}>Normal Mode</button> |
+		{#if perspectiveMode}
+			<button on:click={() => (showPerspectiveControls = !showPerspectiveControls)}>
+				{#if showPerspectiveControls}
+					Hide controls
+				{:else}
+					Show controls
 				{/if}
-				{#each [...data.points].reverse() as point}
-					<h2>Point {@html getTimeFormattedLink(point.startTime)} - {@html getTimeFormattedLink(
-						point.endTime
-					)}</h2>
-					<a href="?/deletePoint" on:click={deletePoint(point)}>Delete</a>
-					<p>{point.offenseDefense}: {point.line.name}</p>
-					<p>Players: {point.players.map((player) => player.name).join(', ')}</p>
-					<p>Result: {getPointResult(point)}</p>
-				{/each}
-			</div>
+			</button>
+			{#if showPerspectiveControls}
+				<div class="slidecontainer">
+					<input
+						type="range"
+						min="-90"
+						max="90"
+						class="slider"
+						id="screenVerticalRotation"
+						bind:value={controls.screenVerticalRotation}
+						on:input={updateControls}
+					/>
+					<label for="screenVerticalRotation">V Rotation {controls.screenVerticalRotation}</label>
+					<input
+						type="range"
+						min="-90"
+						max="90"
+						class="slider"
+						id="screenHorizontalRotation"
+						bind:value={controls.screenHorizontalRotation}
+						on:input={updateControls}
+					/>
+					<label for="screenHorizontalRotation"
+						>H Rotation {controls.screenHorizontalRotation}</label
+					>
+					<input
+						type="range"
+						min="-500"
+						max="500"
+						class="slider"
+						id="cameraY"
+						bind:value={controls.cameraY}
+						on:input={updateControls}
+					/>
+					<label for="cameraY">Height {controls.cameraY}</label>
+					<input
+						type="range"
+						min="1000"
+						max="5000"
+						class="slider"
+						id="focalLength"
+						bind:value={controls.focalLength}
+						on:input={updateControls}
+					/>
+					<label for="focalLength">Focal Length {controls.focalLength}</label>
+				</div>
+			{/if}
 		{/if}
 	</div>
+
+	<hr />
+
+	<ProgressBar bind:video bind:currentTime bind:duration bind:data bind:queuedPoint />
+
+	<a href="/tournament/{data.tournament.id}">{data.tournament.name}</a> |
+
+	<form style="display:inline">
+		<select bind:value={selectedGame} on:change={goToGame}>
+			{#each data.tournament.games as game}
+				{#if game.id === data.game.id}
+					<option value={game.id} selected>{game.opponent}</option>
+				{:else}
+					<option value={game.id}>{game.opponent}</option>
+				{/if}
+			{/each}
+		</select>
+	</form>
+	|
+
+	<button class="mode" disabled={!editMode} on:click={toggleEditMode}>View Mode</button>
+	<button class="mode" disabled={editMode} on:click={toggleEditMode}>Edit Mode</button>
+
+	<hr />
+
+	{#if editMode}
+		<PointAction bind:data bind:video bind:currentTime bind:queuedPoint />
+	{:else}
+		<EventScroller bind:currentTime bind:points={data.points} bind:video />
+	{/if}
 </div>
 
 <style>
@@ -434,18 +388,6 @@
 	}
 	canvas {
 		height: 70vh;
-	}
-
-	.box {
-		display: flex;
-	}
-	.box > #col-1 {
-		float: 1;
-		min-width: 70vw;
-	}
-	.box > #col-2 {
-		float: 1;
-		min-width: 30vw;
 	}
 	video {
 		width: 100vw;
@@ -462,11 +404,11 @@
 
 	/* The slider itself */
 	.slider {
+		height: 1em;
 	}
 
 	/* Mouse-over effects */
 	.slider:hover {
 		opacity: 1; /* Fully shown on mouse-over */
 	}
-
 </style>

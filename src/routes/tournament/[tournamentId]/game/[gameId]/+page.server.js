@@ -11,8 +11,8 @@ export const load = async ({ params }) => {
 				lines: true,
 				players: {
 					include: {
-						lines: true,
-					},
+						lines: true
+					}
 				}
 			}
 		}),
@@ -69,6 +69,8 @@ export const actions = {
 					create: actions.map((action) => ({
 						type: action.type,
 						time: Number(action.time),
+						note: action.note,
+						comment: action.comment,
 						primaryPlayer: action.primaryPlayer
 							? { connect: { id: Number(action.primaryPlayer) } }
 							: undefined,

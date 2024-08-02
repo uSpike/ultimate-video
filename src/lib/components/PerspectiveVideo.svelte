@@ -1,5 +1,5 @@
 <script>
-	import * as THREE from "three";
+	import * as THREE from 'three';
 
 	export let video;
 	export let perspectiveMode = true;
@@ -41,7 +41,7 @@
 		centerY = videoHeight / 2;
 		scale = videoWidth / window.innerWidth;
 
-		console.log("INITIALIZE");
+		console.log('INITIALIZE');
 
 		initPerspectiveMode();
 		initialized = true;
@@ -49,7 +49,7 @@
 
 	$: {
 		if (perspectiveMode) {
-			console.log("PERSPECTIVE MODE ACTIVATE");
+			console.log('PERSPECTIVE MODE ACTIVATE');
 			updateView();
 			setTransform();
 		}
@@ -61,19 +61,19 @@
 
 		let reversedScale = videoWidth / clientWidth / scale;
 
-		centerX = Math.max(centerX, clientWidth / 2 * scale);
-        centerX = Math.min(centerX, videoWidth - clientWidth / 2 * scale);
+		centerX = Math.max(centerX, (clientWidth / 2) * scale);
+		centerX = Math.min(centerX, videoWidth - (clientWidth / 2) * scale);
 
-        if (clientHeight > videoHeight / scale) {
-            centerY = videoHeight / 2;
-        } else {
-            centerY = Math.max(centerY, clientHeight / 2 * scale);
-            centerY = Math.min(centerY, videoHeight - clientHeight / 2 * scale);
-        }
-        let translateX = (videoWidth / 2 - centerX) / scale;
-        let translateY = (videoHeight / 2 - centerY) / scale;
+		if (clientHeight > videoHeight / scale) {
+			centerY = videoHeight / 2;
+		} else {
+			centerY = Math.max(centerY, (clientHeight / 2) * scale);
+			centerY = Math.min(centerY, videoHeight - (clientHeight / 2) * scale);
+		}
+		let translateX = (videoWidth / 2 - centerX) / scale;
+		let translateY = (videoHeight / 2 - centerY) / scale;
 
-        video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${reversedScale})`;
+		video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${reversedScale})`;
 	}
 
 	function initPerspectiveMode() {
@@ -86,7 +86,7 @@
 			2 * videoWidth
 		);
 		let s = videoWidth / controls.focalLength;
-		console.log("s: ", s);
+		console.log('s: ', s);
 		let geometry = new THREE.CylinderGeometry(
 			controls.focalLength,
 			controls.focalLength,
@@ -94,8 +94,8 @@
 			512,
 			512,
 			true,
-			(Math.PI / 2) - (s / 2),
-			s,
+			Math.PI / 2 - s / 2,
+			s
 		);
 		geometry.scale(-1, 1, 1);
 
@@ -111,7 +111,7 @@
 		scene = new THREE.Scene();
 		scene.add(mesh);
 
-		renderer = new THREE.WebGLRenderer({canvas: canvas});
+		renderer = new THREE.WebGLRenderer({ canvas: canvas });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
 
@@ -201,7 +201,7 @@
 		console.log(camera.aspect);
 		camera.updateProjectionMatrix();
 
-		renderer.setSize(window.innerWidth, window.innerHeight *1);
+		renderer.setSize(window.innerWidth, window.innerHeight * 1);
 		scale = videoWidth / video.clientWidth;
 		setTransform();
 	}

@@ -134,7 +134,7 @@ export const actions = {
 				data: {
 					name,
 					tournaments: { connect: { id: Number(tournamentId) } },
-					genderMatch: genderMatch,
+					genderMatch: genderMatch
 				}
 			});
 		} catch (e) {
