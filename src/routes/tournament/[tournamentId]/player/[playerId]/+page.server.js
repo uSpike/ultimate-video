@@ -9,6 +9,11 @@ export const load = async ({ params }) => {
 			games: {
 				include: {
 					points: {
+						where: {
+							players: {
+								some: { id: Number(params.playerId) }
+							}
+						},
 						include: {
 							actions: {
 								where: {

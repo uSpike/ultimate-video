@@ -20,12 +20,26 @@
 
 	let queuedPoint = null;
 	let editMode = false;
+	let skipBetweenMode = false;
 
 	let videoVH = 0.7;
 
 	function onTimeUpdate() {
 		currentTime = video.currentTime;
-		// this doesn't always get updated so update it here
+		if (skipBetweenMode) {
+			if (data.points[0].startTime > currentTime) {
+				// go to start of first point
+				video.currentTime = data.points[0].startTime;
+			} else {
+				for (let i = 0; i + 1 < data.points.length; i++) {
+					console.log(data.points[i].endTime, currentTime, data.points[i + 1].startTime);
+					if (data.points[i].endTime < currentTime && currentTime < data.points[i + 1].startTime) {
+						video.currentTime = data.points[i + 1].startTime;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	function goToGame(event) {
@@ -44,9 +58,6 @@
 
 	let videoHeight = 0;
 	let videoWidth = 0;
-	// let scale = 0;
-	// let centerX = 0;
-	// let centerY = 0;
 
 	let controls = {
 		screenVerticalRotation: 30,
@@ -97,9 +108,6 @@
 
 		videoHeight = video.videoHeight;
 		videoWidth = video.videoWidth;
-		//centerX = videoWidth / 2;
-		//centerY = videoHeight / 2;
-		//scale = videoWidth / document.body.clientWidth;
 
 		initPerspectiveMode();
 	}
@@ -226,6 +234,7 @@
 	}
 
 	function onWindowResize() {
+		if (!camera) return;
 		camera.aspect = (document.body.clientWidth / window.innerHeight) * (1 / videoVH);
 		camera.updateProjectionMatrix();
 		renderer.setSize(document.body.clientWidth, window.innerHeight * videoVH);
@@ -269,7 +278,6 @@
 			crossorigin="anonymous"
 			src={data.game.videoFile}
 			preload="auto"
-			controls
 		>
 			<track kind="captions" />
 			Your browser is not supported.
@@ -373,6 +381,15 @@
 	<button class="mode" disabled={!editMode} on:click={toggleEditMode}>View Mode</button>
 	<button class="mode" disabled={editMode} on:click={toggleEditMode}>Edit Mode</button>
 
+	{#if !editMode}
+		<button
+			style="background-color:{skipBetweenMode ? 'aquamarine' : ''}"
+			class="mode"
+			on:click={() => (skipBetweenMode = !skipBetweenMode)}
+		>
+			Skip Between Mode
+		</button>
+	{/if}
 	<hr />
 
 	{#if editMode}
@@ -410,5 +427,10 @@
 	/* Mouse-over effects */
 	.slider:hover {
 		opacity: 1; /* Fully shown on mouse-over */
+	}
+
+	button:active {
+		background-color: #4caf50;
+		color: white;
 	}
 </style>

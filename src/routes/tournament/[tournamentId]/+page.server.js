@@ -1,7 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import { Prisma } from '@prisma/client';
-import { remove } from 'three/examples/jsm/libs/tween.module.js';
 
 function handlePrismaError(e) {
 	if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -23,7 +22,7 @@ export const load = async ({ params }) => {
 	}
 	let games = await prisma.game.findMany({
 		where: { tournament: { id: Number(params.tournamentId) } },
-		include: { points: { include: { players: true } } }
+		include: { points: { include: { players: true, actions: true } } }
 	});
 	let lines = await prisma.playerLine.findMany({
 		where: { tournamentId: Number(params.tournamentId) },

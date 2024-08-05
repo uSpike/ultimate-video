@@ -55,10 +55,10 @@
 	</ul>
 	<h4>Points</h4>
 	<ul>
-		{#each game.points as point, index}
+		{#each game.points as point}
 			<li>
-				<a href="/{data.tournament.id}/{game.id}/point/{index + 1}?time={point.startTime}">
-					Point {index + 1}: {timeToString(point.startTime)}
+				<a href="/{data.tournament.id}/{game.id}?time={point.startTime}">
+					Point: {timeToString(point.startTime)} - {timeToString(point.endTime)}
 				</a>
 				<ul>
 					{#each point.actions as action}
@@ -101,15 +101,6 @@
 		{/each}
 	</ul>
 {/each}
-
-<form>
-	<label>
-		<input type="radio" value="Throws" />
-		<span>Throws</span>
-	</label>
-	<input type="radio" value="Catches" id="foo" />
-	<label for="foo">Catches</label>
-</form>
 
 <style>
 	label {

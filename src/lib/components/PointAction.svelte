@@ -4,7 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import '$lib/buttons.css';
 
-	let state = 'waiting';
+	let state = 'waiting'; // 'waiting', 'startPoint', 'doPoint'
 	let actionState = null; // 'Offense' or 'Defense'
 
 	let selectedPlayerIds = [];
@@ -56,6 +56,11 @@
 	async function addAction() {
 		if (!queuedPoint) return;
 
+		if (selectedPrimaryPlayer && selectedPrimaryPlayer === selectedSecondaryPlayer) {
+			alert('Primary and secondary players cannot be the same.');
+			return;
+		}
+
 		queuedPoint.actions = [
 			...queuedPoint.actions,
 			{
@@ -84,10 +89,8 @@
 			return;
 		} else if (action === 'Turnover') {
 			actionState = 'Defense';
-			return;
 		} else if (action === 'Defended') {
 			actionState = 'Offense';
-			return;
 		}
 
 		goStateDoPoint();
@@ -130,10 +133,6 @@
 		state = 'startPoint';
 		selectedOD = null;
 		selectedLine = null;
-		selectedPrimaryPlayer = null;
-		selectedSecondaryPlayer = null;
-		selectedNote = null;
-		selectedComment = null;
 		selectedPlayerIds = [];
 		video.pause();
 		queuedPoint = {
@@ -153,6 +152,10 @@
 	function goStateDoPoint() {
 		state = 'doPoint';
 		selectedAction = null;
+		selectedPrimaryPlayer = null;
+		selectedSecondaryPlayer = null;
+		selectedNote = null;
+		selectedComment = null;
 		video.play();
 	}
 
@@ -186,7 +189,7 @@
 
 	$: lastAction = queuedPoint?.actions[queuedPoint.actions.length - 1];
 
-	$: if (['Completion', 'Turnover', 'Goal'].includes(selectedAction)) {
+	$: if (actionState == 'Offense' && ['Completion', 'Turnover', 'Goal'].includes(selectedAction)) {
 		// if the last action was a completion, auto-fill the primary player as the previous receiver
 		if (lastAction?.type === 'Completion') {
 			selectedPrimaryPlayer = lastAction.secondaryPlayer;
@@ -242,64 +245,68 @@
 		{#if state == 'waiting'}
 			<button disabled={currentPoint} on:click={startPoint}>Start Point</button>
 		{:else if state == 'startPoint'}
-			<form>
-				<input type="radio" value="Offense" id="offense" bind:group={selectedOD} />
-				<label for="offense">Offense</label>
-				<input type="radio" value="Defense" id="defense" bind:group={selectedOD} />
-				<label for="defense">Defense</label>
-			</form>
-
-			<hr />
-
-			<form>
-				{#each data.tournament.lines as line}
-					<input
-						disabled={selectedOD === null}
-						type="radio"
-						value={line.name}
-						id={line.name}
-						bind:group={selectedLine}
-						on:change={updateSelectedPlayerIds}
-					/>
-					<label for={line.name}>{line.name}</label>
-				{/each}
-			</form>
-
-			<hr />
-
-			<form>
-				<div id="fmps">
-					{#each FMPPlayers as player}
+			<div style="float: left; width: 10vw;">
+				<form>
+					<input type="radio" value="Offense" id="offense" bind:group={selectedOD} />
+					<label for="offense">Offense</label>
+					<input type="radio" value="Defense" id="defense" bind:group={selectedOD} />
+					<label for="defense">Defense</label>
+				</form>
+			</div>
+			<div style="float: left; width: 10vw;">
+				<form>
+					{#each data.tournament.lines as line}
 						<input
-							disabled={selectedLine === null}
-							type="checkbox"
-							value={player.id}
-							id={player.name}
-							bind:group={selectedPlayerIds}
+							disabled={selectedOD === null}
+							type="radio"
+							value={line.name}
+							id={line.name}
+							bind:group={selectedLine}
+							on:change={updateSelectedPlayerIds}
 						/>
-						<label for={player.name}>{player.name}</label>
+						<label for={line.name}>{line.name}</label>
 					{/each}
-				</div>
-				<div id="mmps">
-					{#each MMPPlayers as player}
-						<input
-							disabled={selectedLine === null}
-							type="checkbox"
-							value={player.id}
-							id={player.name}
-							bind:group={selectedPlayerIds}
-						/>
-						<label for={player.name}>{player.name}</label>
-					{/each}
-				</div>
-			</form>
+				</form>
+			</div>
+			<div style="float: left; width: 20vw;">
+				<form>
+					<div id="fmps">
+						{#each FMPPlayers as player}
+							<input
+								disabled={selectedLine === null}
+								type="checkbox"
+								value={player.id}
+								id={player.name}
+								bind:group={selectedPlayerIds}
+							/>
+							<label for={player.name}>{player.name}</label>
+						{/each}
+					</div>
+				</form>
+			</div>
+			<div style="float: left; width: 20vw;">
+				<form>
+					<div id="mmps">
+						{#each MMPPlayers as player}
+							<input
+								disabled={selectedLine === null}
+								type="checkbox"
+								value={player.id}
+								id={player.name}
+								bind:group={selectedPlayerIds}
+							/>
+							<label for={player.name}>{player.name}</label>
+						{/each}
+					</div>
+				</form>
+			</div>
+			<div style="clear: both;">
+				<span>{selectedPlayerIds.length} players selected</span>
+				<br />
 
-			{selectedPlayerIds.length} players selected
-
-			<hr />
-
-			<button disabled={selectedPlayerIds.length < 1} on:click={queuePoint}>Submit</button>
-			<button on:click={cancelStartPoint}>Cancel</button>
+				<button disabled={selectedPlayerIds.length < 1} on:click={queuePoint}>Submit</button>
+				<button on:click={cancelStartPoint}>Cancel</button>
+			</div>
 		{:else if state == 'doPoint'}
 			<form>
 				<input
@@ -434,7 +441,6 @@
 					on:click={handleInjury}>Submit</button
 				>
 			{/if}
-			<hr />
 		{/if}
 	</div>
 

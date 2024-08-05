@@ -3,6 +3,8 @@
 	export let data;
 </script>
 
-{#each data.tournaments as tournament}
-	<a href="tournament/{tournament.id}">{tournament.name}</a>
-{/each}
+<ul>
+	{#each data.tournaments as tournament}
+		<li><a href="tournament/{tournament.id}">{tournament.name}</a></li>
+	{/each}
+</ul>
