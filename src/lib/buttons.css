@@ -1,33 +1,33 @@
 input[type='radio'] {
-	display: none;
-	text-transform: capitalize;
+    display: none;
+    text-transform: capitalize;
 }
 input[type='checkbox'] {
-	display: none;
+    display: none;
 }
 /* Clicking a label will select its corresponding hidden radio button
 We can select that radio buttons sibling label and style it. */
 input[type='radio']:checked + label {
-	background-color: #8fff6d;
+    background-color: #8fff6d;
 }
 input[type='checkbox']:checked + label {
-	background-color: #8fff6d;
+    background-color: #8fff6d;
 }
 label {
-	display: inline-block;
-	padding: 5px;
-	border: 1px solid rgb(82, 82, 82);
-	border-radius: 3px;
-	background-color: #ffffff;
-	/* width:10em; */
-	text-align: center;
-	text-transform: capitalize;
+    display: inline-block;
+    padding: 5px;
+    border: 1px solid rgb(82, 82, 82);
+    border-radius: 3px;
+    background-color: #ffffff;
+    /* width:10em; */
+    text-align: center;
+    text-transform: capitalize;
 }
 input[type='radio']:disabled + label {
-	background-color: #ffffff;
-	color: #bbbbbb;
+    background-color: #ffffff;
+    color: #bbbbbb;
 }
 input[type='checkbox']:disabled + label {
-	background-color: #ffffff;
-	color: #bbbbbb;
+    background-color: #ffffff;
+    color: #bbbbbb;
 }

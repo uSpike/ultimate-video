@@ -3,10 +3,10 @@
 
 /** @type {import('./$types').PageServerLoad} */
 export const load = async ({ params }) => {
-	const data = {
-		test: { foo: 'bar' }
-	};
-	return data;
+    const data = {
+        test: { foo: 'bar' },
+    };
+    return data;
 };
 
 // 	if (!data.game) {
