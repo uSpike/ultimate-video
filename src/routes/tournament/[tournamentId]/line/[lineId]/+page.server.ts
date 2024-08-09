@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
+import { PageServerLoad } from './$types';
 
-/** @type {import('./$types').PageServerLoad} */
-export const load = async ({ params }) => {
+export const load: PageServerLoad = async ({ params }) => {
     const tournament = await prisma.tournament.findFirst({
         where: { id: Number(params.tournamentId) },
         include: {

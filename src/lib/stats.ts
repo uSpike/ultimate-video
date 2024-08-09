@@ -1,4 +1,4 @@
-export function calculateStats(games, gameId, lineId, playerId) {
+export function calculateStats(games, gameId: Number | null, lineId: Number | null, playerId: Number) {
     let stats = {
         timePlayed: 0,
         pointsPlayed: 0,
@@ -26,10 +26,10 @@ export function calculateStats(games, gameId, lineId, playerId) {
         blocks: 0,
     };
     for (let game of games) {
-        if (gameId && game.id != gameId) continue;
+        if (gameId != null && game.id != gameId) continue;
 
         for (let point of game.points) {
-            if (lineId && point.lineId != lineId) continue;
+            if (lineId != null && point.lineId != lineId) continue;
 
             if (!point.players.find((p) => p.id === playerId)) continue;
 
@@ -51,7 +51,7 @@ export function calculateStats(games, gameId, lineId, playerId) {
 
                 let lastAction;
 
-                switch (action.type) {
+                switch (action.type.type) {
                     case 'Completion':
                         stats.touchLook++;
                         if (!didRecordTouchLookPoint) {
@@ -74,7 +74,7 @@ export function calculateStats(games, gameId, lineId, playerId) {
                         if (isSP) stats.assists++;
 
                         lastAction = point.actions[-1];
-                        if (lastAction?.type == 'Completion' && lastAction?.primaryPlayerId == playerId) {
+                        if (lastAction?.type.type == 'Completion' && lastAction?.primaryPlayerId == playerId) {
                             stats.hockey++;
                         }
                         if (point.offenseDefense == 'Offense') {

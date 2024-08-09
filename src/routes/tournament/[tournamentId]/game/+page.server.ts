@@ -1,7 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 
-/** @type {import('./$types').PageServerLoad} */
 // export const load = async ({ params }) => {
 // 	const data = {
 // 		game: await prisma.game.findUnique({

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { invalidateAll } from '$app/navigation';
     import { calculateStats } from '$lib/stats.js';
 

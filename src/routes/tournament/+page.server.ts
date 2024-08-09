@@ -1,16 +1,14 @@
 import { handlePrismaError } from '$lib/prisma';
 import prisma from '$lib/prisma';
-// import { redirect } from '@sveltejs/kit';
+import { Actions, PageServerLoad } from './$types';
 
-/** @type {import('./$types').PageServerLoad} */
-export const load = async () => {
+export const load: PageServerLoad = async () => {
     const data = {
         tournaments: await prisma.tournament.findMany({}),
     };
     return data;
 };
 
-/** @type {import('./$types').Actions} */
 export const actions = {
     addTournament: async ({ request }) => {
         const data = await request.formData();
@@ -42,4 +40,4 @@ export const actions = {
             handlePrismaError(e);
         }
     },
-};
+} satisfies Actions;

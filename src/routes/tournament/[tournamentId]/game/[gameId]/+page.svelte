@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import ProgressBar from '$lib/components/ProgressBar.svelte';
     import EventScroller from '$lib/components/EventScroller.svelte';
     import PointAction from '$lib/components/PointAction.svelte';

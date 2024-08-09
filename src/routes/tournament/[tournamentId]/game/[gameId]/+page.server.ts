@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
+import { Actions, PageServerLoad } from './$types';
 
-/** @type {import('./$types').PageServerLoad} */
-export const load = async ({ params }) => {
+export const load: PageServerLoad = async ({ params }) => {
     const data = {
         tournament: await prisma.tournament.findFirst({
             where: { id: Number(params.tournamentId) },
@@ -49,7 +49,6 @@ export const load = async ({ params }) => {
     return data;
 };
 
-/** @type {import('./$types').Actions} */
 export const actions = {
     submitPoint: async ({ request }) => {
         const data = await request.formData();
@@ -107,4 +106,4 @@ export const actions = {
             where: { id: Number(pointId) },
         });
     },
-};
+} satisfies Actions;

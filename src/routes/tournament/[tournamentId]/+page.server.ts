@@ -1,6 +1,7 @@
-import { error, redirect } from '@sveltejs/kit';
+import { error, Page, redirect } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Actions, PageServerLoad } from './$types';
 
 function handlePrismaError(e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -10,8 +11,7 @@ function handlePrismaError(e) {
     }
 }
 
-/** @type {import('./$types').PageServerLoad} */
-export const load = async ({ params }) => {
+export const load: PageServerLoad = async ({ params }) => {
     console.log(params);
     let tournament = await prisma.tournament.findUnique({
         where: { id: Number(params.tournamentId) },
@@ -22,7 +22,19 @@ export const load = async ({ params }) => {
     }
     let games = await prisma.game.findMany({
         where: { tournament: { id: Number(params.tournamentId) } },
-        include: { points: { include: { players: true, actions: true } } },
+        include: {
+            points: {
+                include: {
+                    players: true,
+                    actions: {
+                        include: {
+                            type: true,
+                            notes: true,
+                        },
+                    },
+                },
+            },
+        },
     });
     let lines = await prisma.playerLine.findMany({
         where: { tournamentId: Number(params.tournamentId) },
@@ -160,4 +172,4 @@ export const actions = {
             handlePrismaError(e);
         }
     },
-};
+} satisfies Actions;
