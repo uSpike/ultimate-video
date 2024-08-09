@@ -1,7 +1,6 @@
 // prisma/seed.ts
 
 import { PrismaClient } from '@prisma/client';
-//import userData from "../src/lib/data.json" assert { type: "json" }
 
 const prisma = new PrismaClient();
 
@@ -35,8 +34,323 @@ const roster = [
     ['Zach Hallum', 'mmp'],
 ];
 
+async function getNoteId(name: string, type: string) {
+    const note = await prisma.gamePointActionNoteType.findFirst({
+        where: {
+            name: name,
+            type: {
+                type: type,
+            },
+        },
+    });
+    if (!note) {
+        throw new Error(`Note ${name} for type ${type} not found`);
+    }
+    return note.id;
+}
+
 async function main() {
     console.log(`Start seeding ...`);
+
+    const actionTypes = {
+        Completion: await prisma.gamePointActionType.create({
+            data: {
+                type: 'Completion',
+                description: 'A pass that is caught',
+                requirePrimaryPlayer: 'true',
+                primaryPlayerLabel: 'Thrower',
+                requireSecondaryPlayer: 'true',
+                secondaryPlayerLabel: 'Receiver',
+                requireState: 'offense',
+            },
+        }),
+        Turnover: await prisma.gamePointActionType.create({
+            data: {
+                type: 'Turnover',
+                description: 'A turnover',
+                requirePrimaryPlayer: 'true',
+                primaryPlayerLabel: 'Thrower',
+                requireSecondaryPlayer: 'optional',
+                secondaryPlayerLabel: 'Receiver',
+                requireState: 'offense',
+            },
+        }),
+        Goal: await prisma.gamePointActionType.create({
+            data: {
+                type: 'Goal',
+                description: 'A goal is scored.  If no secondary player is specified, it is a callahan.',
+                requirePrimaryPlayer: 'true',
+                primaryPlayerLabel: 'Thrower',
+                requireSecondaryPlayer: 'optional',
+                secondaryPlayerLabel: 'Receiver',
+                requireState: 'offense',
+            },
+        }),
+        Defended: await prisma.gamePointActionType.create({
+            data: {
+                type: 'Defended',
+                description: 'A turnover for the opposing team',
+                requirePrimaryPlayer: 'optional',
+                primaryPlayerLabel: 'Defender',
+                requireSecondaryPlayer: 'false',
+                requireState: 'defense',
+            },
+        }),
+        Conceded: await prisma.gamePointActionType.create({
+            data: {
+                type: 'Conceded',
+                description: 'The point is conceded',
+                requirePrimaryPlayer: 'false',
+                requireSecondaryPlayer: 'false',
+                requireState: 'defense',
+            },
+        }),
+        Injury: await prisma.gamePointActionType.create({
+            data: {
+                type: 'Injury',
+                description: 'An injury resulting in a substitution',
+                requirePrimaryPlayer: 'true',
+                primaryPlayerLabel: 'Injured',
+                requireSecondaryPlayer: 'true',
+                secondaryPlayerLabel: 'Substitute',
+                requireState: 'any',
+            },
+        }),
+        'Offense Set': await prisma.gamePointActionType.create({
+            data: {
+                type: 'Offense Set',
+                description: 'A set offensive play is run',
+                requirePrimaryPlayer: 'false',
+                requireSecondaryPlayer: 'false',
+                requireState: 'any',
+            },
+        }),
+        'Defense Set': await prisma.gamePointActionType.create({
+            data: {
+                type: 'Defense Set',
+                description: 'A set defensive play is run',
+                requirePrimaryPlayer: 'false',
+                requireSecondaryPlayer: 'false',
+                requireState: 'any',
+            },
+        }),
+    };
+
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'under',
+            description: 'Throw completed to the under space',
+            type: { connect: { id: actionTypes['Completion'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'skinny',
+            description: 'Throw completed to the skinny space',
+            type: { connect: { id: actionTypes['Completion'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'strike',
+            description: 'Throw completed to the strike space',
+            type: { connect: { id: actionTypes['Completion'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'swing',
+            description: 'Throw completed to the swing space',
+            type: { connect: { id: actionTypes['Completion'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'huck',
+            description: 'Throw completed to the huck space',
+            type: { connect: { id: actionTypes['Completion'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'dump',
+            description: 'Throw completed to the dump space',
+            type: { connect: { id: actionTypes['Completion'].id } },
+        },
+    });
+
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'drop',
+            description: 'The thrower dropped the disc',
+            type: { connect: { id: actionTypes['Turnover'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'throw',
+            description: 'The thrower threw the disc away',
+            type: { connect: { id: actionTypes['Turnover'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'stall',
+            description: 'The player was stalled',
+            type: { connect: { id: actionTypes['Turnover'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'catch',
+            description: 'The receiver should have caught the disc',
+            type: { connect: { id: actionTypes['Turnover'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'miscommunication',
+            description: 'A miscommunication between players',
+            type: { connect: { id: actionTypes['Turnover'].id } },
+        },
+    });
+
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'endzone',
+            description: 'The throw was caught in the endzone',
+            type: { connect: { id: actionTypes['Goal'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'huck',
+            description: 'The throw was a huck',
+            type: { connect: { id: actionTypes['Goal'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'flow',
+            description: 'The point was scored with flow',
+            type: { connect: { id: actionTypes['Goal'].id } },
+        },
+    });
+
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'block',
+            description: 'The player blocked the disc',
+            type: { connect: { id: actionTypes['Defended'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'poach',
+            description: 'The player poached and got a D',
+            type: { connect: { id: actionTypes['Defended'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'mark',
+            description: 'The player got a D on the mark',
+            type: { connect: { id: actionTypes['Defended'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'throw',
+            description: 'The thrower threw the disc away',
+            type: { connect: { id: actionTypes['Defended'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'drop',
+            description: 'The receiver dropped the disc',
+            type: { connect: { id: actionTypes['Defended'].id } },
+        },
+    });
+
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'endzone',
+            description: 'The point was scored in the endzone',
+            type: { connect: { id: actionTypes['Conceded'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'huck',
+            description: 'The point was scored with a huck',
+            type: { connect: { id: actionTypes['Conceded'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'flow',
+            description: 'The point was scored with flow',
+            type: { connect: { id: actionTypes['Conceded'].id } },
+        },
+    });
+
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'person',
+            description: 'Person offense',
+            type: { connect: { id: actionTypes['Offense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'zone-3-3-1',
+            description: '3-3-1 Zone offense',
+            type: { connect: { id: actionTypes['Offense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'zone-2-4-1',
+            description: '2-4-1 Zone offense',
+            type: { connect: { id: actionTypes['Offense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'zone-2-3-2',
+            description: '2-3-2 Zone offense',
+            type: { connect: { id: actionTypes['Offense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'person',
+            description: 'Person defense',
+            type: { connect: { id: actionTypes['Defense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'zone-3-3-1',
+            description: '3-3-1 Zone defense',
+            type: { connect: { id: actionTypes['Defense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'zone-2-4-1',
+            description: '2-4-1 Zone defense',
+            type: { connect: { id: actionTypes['Defense Set'].id } },
+        },
+    });
+    await prisma.gamePointActionNoteType.create({
+        data: {
+            name: 'zone-2-3-2',
+            description: '2-3-2 Zone defense',
+            type: { connect: { id: actionTypes['Defense Set'].id } },
+        },
+    });
 
     let players = {};
     for (let t of roster) {
@@ -227,25 +541,28 @@ async function main() {
     await prisma.gamePointAction.create({
         data: {
             time: 96,
-            type: 'Completion',
-            pointId: g1p1.id,
-            primaryPlayerId: players['Zach Hallum'],
-            secondaryPlayerId: players['Maggie Lincoln'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p1.id } },
+            primaryPlayer: { connect: { id: players['Zach Hallum'] } },
+            secondaryPlayer: { connect: { id: players['Maggie Lincoln'] } },
+            notes: { connect: { id: await getNoteId('skinny', 'Completion') } },
         },
     });
     await prisma.gamePointAction.create({
         data: {
             time: 98,
-            type: 'Turnover',
-            pointId: g1p1.id,
-            primaryPlayerId: players['Maggie Lincoln'],
+            type: { connect: { id: actionTypes['Turnover'].id } },
+            point: { connect: { id: g1p1.id } },
+            primaryPlayer: { connect: { id: players['Maggie Lincoln'] } },
+            notes: { connect: { id: await getNoteId('throw', 'Turnover') } },
         },
     });
     await prisma.gamePointAction.create({
         data: {
             time: 137,
-            type: 'Conceded',
-            pointId: g1p1.id,
+            type: { connect: { id: actionTypes['Conceded'].id } },
+            point: { connect: { id: g1p1.id } },
+            notes: { connect: { id: await getNoteId('endzone', 'Conceded') } },
         },
     });
 
@@ -280,113 +597,125 @@ async function main() {
     await prisma.gamePointAction.create({
         data: {
             time: 238,
-            type: 'Completion',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Luke Bodnar'],
-            secondaryPlayerId: players['Lionel Wu'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Luke Bodnar'] } },
+            secondaryPlayer: { connect: { id: players['Lionel Wu'] } },
+            notes: { connect: { id: await getNoteId('skinny', 'Completion') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 240,
-            type: 'Completion',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Lionel Wu'],
-            secondaryPlayerId: players['Kaylin Weber'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Lionel Wu'] } },
+            secondaryPlayer: { connect: { id: players['Kaylin Weber'] } },
+            notes: { connect: { id: await getNoteId('under', 'Completion') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 248,
-            type: 'Completion',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Kaylin Weber'],
-            secondaryPlayerId: players['Andrew Taber'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Kaylin Weber'] } },
+            secondaryPlayer: { connect: { id: players['Andrew Taber'] } },
+            notes: { connect: { id: await getNoteId('huck', 'Completion') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 252,
-            type: 'Turnover',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Andrew Taber'],
+            type: { connect: { id: actionTypes['Turnover'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Andrew Taber'] } },
+            notes: { connect: { id: await getNoteId('throw', 'Turnover') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 269,
-            type: 'Defended',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Kaylin Weber'],
+            type: { connect: { id: actionTypes['Defended'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Kaylin Weber'] } },
+            notes: { connect: { id: await getNoteId('block', 'Defended') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 277,
-            type: 'Completion',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Lionel Wu'],
-            secondaryPlayerId: players['Luke Bodnar'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Lionel Wu'] } },
+            secondaryPlayer: { connect: { id: players['Luke Bodnar'] } },
+            notes: { connect: { id: await getNoteId('skinny', 'Completion') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 280,
-            type: 'Completion',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Luke Bodnar'],
-            secondaryPlayerId: players['Abby Seltzer'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Luke Bodnar'] } },
+            secondaryPlayer: { connect: { id: players['Abby Seltzer'] } },
+            notes: { connect: { id: await getNoteId('huck', 'Completion') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 284,
-            type: 'Completion',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Abby Seltzer'],
-            secondaryPlayerId: players['Luke Bodnar'],
+            type: { connect: { id: actionTypes['Completion'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Abby Seltzer'] } },
+            secondaryPlayer: { connect: { id: players['Luke Bodnar'] } },
+            notes: { connect: { id: await getNoteId('swing', 'Completion') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 292,
-            type: 'Turnover',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Luke Bodnar'],
+            type: { connect: { id: actionTypes['Turnover'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Luke Bodnar'] } },
+            notes: { connect: { id: await getNoteId('throw', 'Turnover') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 354,
-            type: 'Defended',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Andrew Taber'],
+            type: { connect: { id: actionTypes['Defended'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Andrew Taber'] } },
+            notes: { connect: { id: await getNoteId('block', 'Defended') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 369,
-            type: 'Turnover',
-            pointId: g1p2.id,
-            primaryPlayerId: players['Andrew Taber'],
+            type: { connect: { id: actionTypes['Turnover'].id } },
+            point: { connect: { id: g1p2.id } },
+            primaryPlayer: { connect: { id: players['Andrew Taber'] } },
+            notes: { connect: { id: await getNoteId('throw', 'Turnover') } },
         },
     });
 
     await prisma.gamePointAction.create({
         data: {
             time: 395,
-            type: 'Conceded',
-            pointId: g1p2.id,
+            type: { connect: { id: actionTypes['Conceded'].id } },
+            point: { connect: { id: g1p2.id } },
+            notes: { connect: { id: await getNoteId('endzone', 'Conceded') } },
         },
     });
     await prisma.gamePoint.update({
