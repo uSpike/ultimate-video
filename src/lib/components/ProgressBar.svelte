@@ -34,11 +34,11 @@
             class="point"
             style="left: {(point.startTime / duration) * 100}%; width: {(pointDuration / duration) * 100}%;"
         ></div>
-        {#each point.actions as event}
+        {#each point.actions as action}
             <div
-                class="hovertext {event.type}"
-                data-hover={event.type}
-                style="left: {(event.time / duration) * 100}%;"
+                class="hovertext {action.type.type}"
+                data-hover={action.type.type}
+                style="left: {(action.time / duration) * 100}%;"
             ></div>
         {/each}
     {/each}

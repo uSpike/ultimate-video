@@ -42,6 +42,7 @@
         });
 
         if (response.ok) {
+            console;
             invalidateAll();
             return response.json();
         } else {
@@ -122,19 +123,17 @@
     {/each}
 </ul>
 
-{#if data.players.length != data.tournament.players.length}
-    <form method="POST" on:submit|preventDefault={addPlayer}>
-        <select name="players">
-            {#each data.players as player}
-                {#if !data.tournament.players.find((p) => p.id === player.id)}
-                    <option value={player.id}>{player.name}</option>
-                {/if}
-            {/each}
-        </select>
-        <input type="text" name="tournamentId" value={data.tournament.id} hidden />
-        <button type="submit">Add Player</button>
-    </form>
-{/if}
+<form method="POST" on:submit|preventDefault={addPlayer}>
+    <select name="playerId">
+        {#each data.players as player}
+            {#if !data.tournament.players.find((p) => p.id === player.id)}
+                <option value={player.id}>{player.name}</option>
+            {/if}
+        {/each}
+    </select>
+    <input type="text" name="tournamentId" value={data.tournament.id} hidden />
+    <button type="submit">Add Player</button>
+</form>
 
 <form method="POST" on:submit|preventDefault={newPlayer}>
     <input type="text" name="name" placeholder="Name" />

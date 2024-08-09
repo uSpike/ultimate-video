@@ -1,19 +1,19 @@
-<script>
+<script lang="ts">
     import PointActionButton from '$lib/components/PointActionButton.svelte';
 
     import { invalidateAll } from '$app/navigation';
     import '$lib/buttons.css';
 
-    let state = 'waiting'; // 'waiting', 'startPoint', 'doPoint'
+    let state: string = 'waiting'; // 'waiting', 'startPoint', 'doPoint'
     let actionState = null; // 'Offense' or 'Defense'
 
-    let selectedPlayerIds = [];
-    let selectedOD = null;
+    let selectedPlayerIds: number[] = [];
+    let selectedOD: string | null = null;
     let selectedLine = null;
 
-    let selectedAction = null;
-    let selectedNote = null;
-    let selectedComment = null;
+    let selectedActionType = null;
+    let selectedNotes = [];
+    let selectedComment: string | null = null;
     let selectedPrimaryPlayer = null;
     let selectedSecondaryPlayer = null;
 
@@ -45,7 +45,7 @@
         queuedPoint.startTime = currentTime;
         queuedPoint.players = data.tournament.players.filter((player) => selectedPlayerIds.includes(player.id));
 
-        actionState = selectedOD;
+        actionState = selectedOD.toLowerCase();
         goStateDoPoint();
     }
 
@@ -57,12 +57,17 @@
             return;
         }
 
+        if (selectedActionType.type === 'Injury') {
+            // add substitute player
+            queuedPoint.players = [...queuedPoint.players, selectedSecondaryPlayer];
+        }
+
         queuedPoint.actions = [
             ...queuedPoint.actions,
             {
                 time: currentTime,
-                type: selectedAction,
-                note: selectedNote,
+                type: selectedActionType,
+                notes: selectedNotes,
                 comment: selectedComment,
                 primaryPlayer: selectedPrimaryPlayer,
                 secondaryPlayer: selectedSecondaryPlayer,
@@ -72,21 +77,21 @@
         selectedPrimaryPlayer = null;
         selectedSecondaryPlayer = null;
 
-        let action = selectedAction;
-        selectedAction = null;
-        selectedNote = null;
+        let actionType = selectedActionType.type;
+        selectedActionType = null;
+        selectedNotes = [];
         selectedComment = null;
 
-        if (action === 'Goal') {
+        if (actionType === 'Goal') {
             await submitPoint();
             return;
-        } else if (action === 'Conceded') {
+        } else if (actionType === 'Conceded') {
             await submitPoint();
             return;
-        } else if (action === 'Turnover') {
-            actionState = 'Defense';
-        } else if (action === 'Defended') {
-            actionState = 'Offense';
+        } else if (actionType === 'Turnover') {
+            actionState = 'defense';
+        } else if (actionType === 'Defended') {
+            actionState = 'offense';
         }
 
         goStateDoPoint();
@@ -99,8 +104,20 @@
         form.append('lineId', data.tournament.lines.find((line) => line.name === selectedLine).id);
         form.append('startTime', queuedPoint.startTime);
         form.append('endTime', currentTime);
-        selectedPlayerIds.forEach((player) => form.append('players', player));
-        form.append('actions', JSON.stringify(queuedPoint.actions));
+        selectedPlayerIds.forEach((playerId) => form.append('players', String(playerId)));
+        form.append(
+            'actions',
+            JSON.stringify(
+                queuedPoint.actions.map((action) => ({
+                    typeId: action.type.id,
+                    time: action.time,
+                    notes: action.notes.map((note) => note.id),
+                    comment: action.comment,
+                    primaryPlayer: action.primaryPlayer,
+                    secondaryPlayer: action.secondaryPlayer,
+                })),
+            ),
+        );
 
         let res = await fetch(`?/submitPoint`, {
             method: 'POST',
@@ -117,11 +134,6 @@
                 alert(js.error?.message);
             }
         }
-    }
-
-    function handleInjury(injuredPlayer, substitutePlayer) {
-        // add substitute player
-        queuedPoint.players = [...queuedPoint.players, substitutePlayer];
     }
 
     function startPoint() {
@@ -147,10 +159,10 @@
 
     function goStateDoPoint() {
         state = 'doPoint';
-        selectedAction = null;
+        selectedActionType = null;
         selectedPrimaryPlayer = null;
         selectedSecondaryPlayer = null;
-        selectedNote = null;
+        selectedNotes = [];
         selectedComment = null;
         video.play();
     }
@@ -176,16 +188,16 @@
         // clear out selected players in case a different action is selected
         selectedPrimaryPlayer = null;
         selectedSecondaryPlayer = null;
-        selectedNote = null;
+        selectedNotes = [];
         selectedComment = null;
         video.pause();
     }
 
     $: lastAction = queuedPoint?.actions[queuedPoint.actions.length - 1];
 
-    $: if (actionState == 'Offense' && ['Completion', 'Turnover', 'Goal'].includes(selectedAction)) {
+    $: if (actionState == 'offense' && ['Completion', 'Turnover', 'Goal'].includes(selectedActionType?.type)) {
         // if the last action was a completion, auto-fill the primary player as the previous receiver
-        if (lastAction?.type === 'Completion') {
+        if (lastAction?.type.type === 'Completion') {
             selectedPrimaryPlayer = lastAction.secondaryPlayer;
         }
     }
@@ -202,9 +214,9 @@
 
     function getPointResult(point) {
         for (let i = 0; i < point.actions.length; i++) {
-            if (point.actions[i].type === 'Goal') {
+            if (point.actions[i].type.type === 'Goal') {
                 return 'Goal';
-            } else if (point.actions[i].type === 'Conceded') {
+            } else if (point.actions[i].type.type === 'Conceded') {
                 return 'Conceded';
             }
         }
@@ -230,6 +242,20 @@
             if (js.error) {
                 alert(js.error.message);
             }
+        }
+    }
+
+    let submitDisabled = false;
+
+    $: if (selectedActionType) {
+        if (['false', 'optional'].includes(selectedActionType.requirePrimaryPlayer)) {
+            submitDisabled = false;
+        } else if (selectedPrimaryPlayer === null) {
+            submitDisabled = true;
+        } else if (['false', 'optional'].includes(selectedActionType.requireSecondaryPlayer)) {
+            submitDisabled = false;
+        } else {
+            submitDisabled = selectedSecondaryPlayer === null;
         }
     }
 </script>
@@ -303,134 +329,33 @@
             </div>
         {:else if state == 'doPoint'}
             <form>
-                <input
-                    type="radio"
-                    value="Completion"
-                    id="completion"
-                    bind:group={selectedAction}
-                    on:click={selectAction}
-                    disabled={(selectedAction && selectedAction !== 'Completion') || actionState == 'Defense'}
-                />
-                <label for="completion">Completion</label>
-                <input
-                    type="radio"
-                    value="Turnover"
-                    id="turnover"
-                    bind:group={selectedAction}
-                    on:click={selectAction}
-                    disabled={(selectedAction && selectedAction !== 'Turnover') || actionState == 'Defense'}
-                />
-                <label for="turnover">Turnover</label>
-                <input
-                    type="radio"
-                    value="Goal"
-                    id="goal"
-                    bind:group={selectedAction}
-                    on:click={selectAction}
-                    disabled={(selectedAction && selectedAction !== 'Goal') || actionState == 'Defense'}
-                />
-                <label for="goal">Goal</label>
-                <input
-                    type="radio"
-                    value="Defended"
-                    id="defended"
-                    bind:group={selectedAction}
-                    on:click={selectAction}
-                    disabled={(selectedAction && selectedAction !== 'Defended') || actionState == 'Offense'}
-                />
-                <label for="defended">Defended</label>
-                <input
-                    type="radio"
-                    value="Conceded"
-                    id="conceded"
-                    bind:group={selectedAction}
-                    on:click={selectAction}
-                    disabled={(selectedAction && selectedAction !== 'Conceded') || actionState == 'Offense'}
-                />
-                <label for="conceded">Conceded</label>
-                <input
-                    type="radio"
-                    value="Injury"
-                    id="injury"
-                    bind:group={selectedAction}
-                    on:click={selectAction}
-                    disabled={selectedAction && selectedAction !== 'Injury'}
-                />
-                <label for="injury">Injury</label>
+                {#each data.actionTypes as actionType}
+                    <input
+                        type="radio"
+                        value={actionType}
+                        id={actionType.id}
+                        bind:group={selectedActionType}
+                        on:click={selectAction}
+                        disabled={!['any', actionState].includes(actionType.requireState) ||
+                            selectedActionType?.type === actionType.type}
+                    />
+                    <label for={actionType.id}>{actionType.type}</label>
+                {/each}
                 <button on:click={endPoint}>End Point</button>
             </form>
-            <button on:click={cancelSelectAction} disabled={selectedAction === null}>Cancel</button>
+            <button on:click={cancelSelectAction} disabled={selectedActionType === null}>Cancel</button>
 
             <hr />
-            {#if selectedAction == 'Completion'}
+            {#if selectedActionType}
                 <PointActionButton
                     bind:players={queuedPoint.players}
                     bind:selectedPrimaryPlayer
                     bind:selectedSecondaryPlayer
-                    bind:selectedNote
+                    bind:selectedNotes
                     bind:selectedComment
-                    primaryPlayerLabel="Thrower"
-                    secondaryPlayerLabel="Receiver"
-                    noteLabels={['under', 'skinny', 'strike', 'swing', 'huck', 'dump']}
+                    bind:actionType={selectedActionType}
                 />
-                <button disabled={!selectedPrimaryPlayer || !selectedPrimaryPlayer} on:click={addAction}>Submit</button>
-            {:else if selectedAction == 'Turnover'}
-                <PointActionButton
-                    bind:players={queuedPoint.players}
-                    bind:selectedPrimaryPlayer
-                    bind:selectedSecondaryPlayer
-                    bind:selectedNote
-                    bind:selectedComment
-                    primaryPlayerLabel="Thrower"
-                    secondaryPlayerLabel="Receiver"
-                    noteLabels={['drop', 'throw', 'stall', 'catch', 'miscommunication']}
-                />
-                <button disabled={!selectedPrimaryPlayer} on:click={addAction}>Submit</button>
-            {:else if selectedAction == 'Goal'}
-                <PointActionButton
-                    bind:players={queuedPoint.players}
-                    bind:selectedPrimaryPlayer
-                    bind:selectedSecondaryPlayer
-                    bind:selectedNote
-                    bind:selectedComment
-                    primaryPlayerLabel="Thrower"
-                    secondaryPlayerLabel="Receiver"
-                    noteLabels={['endzone', 'huck', 'flow']}
-                />
-                <button disabled={!selectedPrimaryPlayer} on:click={addAction}>Submit</button>
-                <sub>If it's a callahan, who caught it is the "thrower".</sub>
-            {:else if selectedAction == 'Defended'}
-                <PointActionButton
-                    bind:players={queuedPoint.players}
-                    bind:selectedPrimaryPlayer
-                    bind:selectedNote
-                    bind:selectedComment
-                    primaryPlayerLabel="Defender"
-                    noteLabels={['drop', 'throw', 'mark', 'block', 'poach']}
-                />
-                <button on:click={addAction}>Submit</button>
-            {:else if selectedAction == 'Conceded'}
-                Point for other team
-                <PointActionButton
-                    bind:players={queuedPoint.players}
-                    bind:selectedNote
-                    bind:selectedComment
-                    noteLabels={['endzone', 'huck', 'flow']}
-                />
-                <button on:click={addAction}>Submit</button>
-            {:else if selectedAction == 'Injury'}
-                <p>Injured</p>
-                <PointActionButton
-                    bind:players={queuedPoint.players}
-                    bind:selectedPrimaryPlayer
-                    bind:selectedSecondaryPlayer
-                    bind:selectedComment
-                    primaryPlayerLabel="Injured Player"
-                    secondaryPlayerLabel="Substitute Player"
-                />
-                <button disabled={!selectedPrimaryPlayer || !selectedSecondaryPlayer} on:click={handleInjury}
-                    >Submit</button
-                >
+                <button disabled={submitDisabled} on:click={addAction}> Submit</button>
             {/if}
         {/if}
     </div>

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import '$lib/buttons.css';
 
     import { onMount } from 'svelte';
@@ -6,14 +6,15 @@
     export let players = [];
     export let selectedPrimaryPlayer;
     export let selectedSecondaryPlayer;
-    export let selectedNote;
-    export let selectedComment;
+    export let selectedNotes;
+    export let selectedComment: string | null;
 
-    export let primaryPlayerLabel = null;
-    export let secondaryPlayerLabel = null;
-    export let noteLabels = [];
+    export let actionType;
 
     class ShortcutManager {
+        private keys: Map<string, () => void>;
+        private text: Map<string, string>;
+
         constructor() {
             // key -> callback
             this.keys = new Map();
@@ -63,20 +64,14 @@
 
     onMount(() => {
         shortcuts.clear();
-        players.forEach((player) => {
-            shortcuts.addShortcut(player.name, () => handlePlayerShortcut(player.id));
-        });
-        noteLabels.forEach((note) => {
-            shortcuts.addShortcut(note, () => (selectedNote = note));
-        });
     });
 </script>
 
 <svelte:window on:keydown={shortcuts.onKeyDown} />
 
-{#if primaryPlayerLabel}
+{#if actionType.requirePrimaryPlayer !== 'false'}
     <div style="clear: both">
-        <span>{primaryPlayerLabel}</span>
+        <span>{actionType.primaryPlayerLabel}</span>
         <form>
             {#each players as player}
                 <input
@@ -89,9 +84,9 @@
             {/each}
         </form>
     </div>
-    {#if secondaryPlayerLabel}
+    {#if actionType.requireSecondaryPlayer !== 'false'}
         <div style="clear: both">
-            <span>{secondaryPlayerLabel}</span>
+            <span>{actionType.secondaryPlayerLabel}</span>
             <form>
                 {#each players as player}
                     <input
@@ -108,13 +103,13 @@
     {/if}
 {/if}
 
-{#if noteLabels.length > 0}
+{#if actionType.notes.length > 0}
     <div style="clear: both">
         <span>Note</span>
         <form>
-            {#each noteLabels as note}
-                <input type="radio" value={note} id={note} bind:group={selectedNote} />
-                <label for={note}>{@html shortcuts.makeShortcutText(note)}</label>
+            {#each actionType.notes as note}
+                <input type="checkbox" value={note} id={note.name} bind:group={selectedNotes} />
+                <label for={note.name}>{note.name}</label>
             {/each}
         </form>
     </div>

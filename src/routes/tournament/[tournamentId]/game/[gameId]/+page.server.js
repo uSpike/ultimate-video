@@ -27,11 +27,18 @@ export const load = async ({ params }) => {
                 players: true,
                 actions: {
                     include: {
+                        type: true,
+                        notes: true,
                         primaryPlayer: true,
                         secondaryPlayer: true,
                     },
                     orderBy: { time: 'asc' },
                 },
+            },
+        }),
+        actionTypes: await prisma.gamePointActionType.findMany({
+            include: {
+                notes: true,
             },
         }),
     };
@@ -75,9 +82,9 @@ export const actions = {
                 },
                 actions: {
                     create: actions.map((action) => ({
-                        type: action.type,
+                        type: { connect: { id: action.typeId } },
                         time: Number(action.time),
-                        note: action.note,
+                        notes: { connect: action.notes.map((note) => ({ id: Number(note) })) },
                         comment: action.comment,
                         primaryPlayer: action.primaryPlayer
                             ? { connect: { id: Number(action.primaryPlayer) } }

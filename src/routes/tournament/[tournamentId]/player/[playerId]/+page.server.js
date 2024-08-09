@@ -1,4 +1,3 @@
-import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 
 /** @type {import('./$types').PageServerLoad} */

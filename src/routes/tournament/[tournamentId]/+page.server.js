@@ -98,7 +98,6 @@ export const actions = {
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${data.get('tournamentId')}`);
     },
     removePlayerFromLine: async ({ request }) => {
         const data = await request.formData();
@@ -160,6 +159,5 @@ export const actions = {
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${tournamentId}`);
     },
 };

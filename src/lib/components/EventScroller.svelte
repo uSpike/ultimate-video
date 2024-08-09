@@ -3,12 +3,6 @@
     export let video;
     export let points;
 
-    $: events = points.flatMap((point) => [
-        { type: 'Started', time: point.startTime },
-        ...point.actions,
-        { type: 'Ended', time: point.endTime },
-    ]);
-
     let eventElements = [];
     const eventColors = {
         Started: '#0ff',
@@ -22,22 +16,24 @@
     let activeElementIndex = 0;
 
     function scrollToCurrentEvent(time) {
-        if (events.length === 0) return;
-        for (let i = 1; i < events.length; i++) {
-            if (events[i].type == 'Ended') continue;
-            if (events[i].time >= time) {
-                // scroll to active event
-                eventElements[i - 1]?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                    inline: 'start',
-                });
-                // highlight active event
-                activeElementIndex = i - 1;
-                return;
+        if (points.length === 0) return;
+        for (let point of points) {
+            for (let i = 1; i < points.length; i++) {
+                let action = point.actions[i];
+                if (action.time >= time) {
+                    // scroll to active event
+                    eventElements[i - 1]?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'start',
+                    });
+                    // highlight active event
+                    activeElementIndex = i - 1;
+                    return;
+                }
             }
+            activeElementIndex = 0;
         }
-        activeElementIndex = 0;
     }
 
     function seek(time) {
@@ -54,34 +50,38 @@
 </script>
 
 <div style="height: 5em; overflow-y: scroll">
-    {#each events as event, index}
-        {@const time = new Date(event.time * 1000).toISOString().slice(11, 19)}
+    {#each points as point}
+        {#each point.actions as action, index}
+            {@const time = new Date(action.time * 1000).toISOString().slice(11, 19)}
 
-        <!-- only show if it has a defined color -->
-        {#if eventColors[event.type]}
-            <div
-                bind:this={eventElements[index]}
-                class:active-event={index == activeElementIndex}
-                style="background: {eventColors[event.type]}; white-space: nowrap; height: 1.2em"
-            >
-                <span>
-                    <a href="#" on:click={seek(event.time)}>{time}</a>
-                    {#if event.type == 'Started'}
-                        Start point
-                    {:else if event.type == 'Completion'}
-                        Completion: {shortName(event.primaryPlayer.name)} - {shortName(event.secondaryPlayer.name)}
-                    {:else if event.type == 'Turnover'}
-                        Turnover: {shortName(event.primaryPlayer.name)}
-                    {:else if event.type == 'Defended'}
-                        Defended: {shortName(event.primaryPlayer?.name)}
-                    {:else if event.type == 'Conceded'}
-                        Conceded
-                    {:else if event.type == 'Goal'}
-                        Goal: {shortName(event.primaryPlayer.name)} - {shortName(event.secondaryPlayer.name)}
-                    {/if}
-                </span>
-            </div>
-        {/if}
+            <!-- only show if it has a defined color -->
+            {#if eventColors[action.type.type]}
+                <div
+                    bind:this={eventElements[index]}
+                    class:active-event={index == activeElementIndex}
+                    style="background: {eventColors[action.type.type]}; white-space: nowrap; height: 1.2em"
+                >
+                    <span>
+                        <a href="#" on:click={seek(action.time)}>{time}</a>
+                        {#if action.type.type == 'Started'}
+                            Start point
+                        {:else if action.type.type == 'Completion'}
+                            Completion: {shortName(action.primaryPlayer.name)} - {shortName(
+                                action.secondaryPlayer.name,
+                            )}
+                        {:else if action.type.type == 'Turnover'}
+                            Turnover: {shortName(action.primaryPlayer.name)}
+                        {:else if action.type.type == 'Defended'}
+                            Defended: {shortName(action.primaryPlayer?.name)}
+                        {:else if action.type.type == 'Conceded'}
+                            Conceded
+                        {:else if action.type.type == 'Goal'}
+                            Goal: {shortName(action.primaryPlayer.name)} - {shortName(action.secondaryPlayer.name)}
+                        {/if}
+                    </span>
+                </div>
+            {/if}
+        {/each}
     {/each}
 </div>
 
