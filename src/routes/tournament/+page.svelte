@@ -1,10 +1,9 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
 
-    /** @type {import('./$types').PageServerLoad} */
     export let data;
 
-    async function handleFetch(url, formData) {
+    async function handleFetch(url: string, formData: FormData) {
         let response = await fetch(url, {
             method: 'POST',
             body: formData,
@@ -19,10 +18,10 @@
         }
     }
 
-    async function deleteTournament(event) {
+    async function deleteTournament(event: SubmitEvent) {
         let ok = confirm('Are you sure you want to delete this tournament?');
         if (!ok) return;
-        const formData = new FormData(event.currentTarget);
+        const formData = new FormData(event.target as HTMLFormElement);
         await handleFetch(`?/deleteTournament`, formData);
     }
 </script>

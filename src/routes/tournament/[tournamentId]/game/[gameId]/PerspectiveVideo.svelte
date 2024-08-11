@@ -1,10 +1,10 @@
-<script>
+<script lang="ts">
     import * as THREE from 'three';
 
-    export let video;
+    export let video: HTMLVideoElement;
     export let perspectiveMode = true;
 
-    let canvas;
+    let canvas: HTMLCanvasElement;
 
     let videoHeight = 0;
     let videoWidth = 0;
@@ -19,7 +19,9 @@
         focalLength: 2400,
     };
 
-    let renderer, scene, camera;
+    let renderer: THREE.WebGLRenderer;
+    let scene: THREE.Scene;
+    let camera: THREE.PerspectiveCamera;
 
     let latitude = 0;
     let longitude = 0;
@@ -41,15 +43,12 @@
         centerY = videoHeight / 2;
         scale = videoWidth / window.innerWidth;
 
-        console.log('INITIALIZE');
-
         initPerspectiveMode();
         initialized = true;
     }
 
     $: {
         if (perspectiveMode) {
-            console.log('PERSPECTIVE MODE ACTIVATE');
             updateView();
             setTransform();
         }
@@ -81,7 +80,6 @@
 
         camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 2 * videoWidth);
         let s = videoWidth / controls.focalLength;
-        console.log('s: ', s);
         let geometry = new THREE.CylinderGeometry(
             controls.focalLength,
             controls.focalLength,
@@ -151,7 +149,7 @@
         }
     }
 
-    function onCanvasMouseDown(event) {
+    function onCanvasMouseDown(event: MouseEvent) {
         if (event.button != 0) {
             return;
         }
@@ -165,7 +163,7 @@
         originalLongitude = longitude;
     }
 
-    function onCanvasMouseMove(event) {
+    function onCanvasMouseMove(event: MouseEvent) {
         if (!mouseDown) {
             return;
         }
@@ -174,14 +172,14 @@
         latitude = (mouseY - event.clientY) * 0.1 + originalLatitude;
     }
 
-    function onCanvasMouseUp(event) {
+    function onCanvasMouseUp(event: MouseEvent) {
         if (!mouseDown) {
             return;
         }
         mouseDown = false;
     }
 
-    function onCanvasWheel(event) {
+    function onCanvasWheel(event: WheelEvent) {
         event.preventDefault();
         event.stopPropagation();
 
@@ -193,7 +191,6 @@
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
-        console.log(camera.aspect);
         camera.updateProjectionMatrix();
 
         renderer.setSize(window.innerWidth, window.innerHeight * 1);

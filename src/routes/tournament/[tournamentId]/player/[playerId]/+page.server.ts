@@ -1,12 +1,20 @@
 import prisma from '$lib/prisma';
-import {PageServerLoad} from './$types';
-
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
     const tournament = await prisma.tournament.findFirst({
         where: { id: Number(params.tournamentId) },
         include: {
             games: {
+                where: {
+                    points: {
+                        some: {
+                            players: {
+                                some: { id: Number(params.playerId) },
+                            },
+                        },
+                    },
+                },
                 include: {
                     points: {
                         where: {
@@ -23,18 +31,10 @@ export const load: PageServerLoad = async ({ params }) => {
                                     ],
                                 },
                                 include: {
+                                    type: true,
                                     primaryPlayer: true,
                                     secondaryPlayer: true,
                                 },
-                            },
-                        },
-                    },
-                },
-                where: {
-                    points: {
-                        some: {
-                            players: {
-                                some: { id: Number(params.playerId) },
                             },
                         },
                     },

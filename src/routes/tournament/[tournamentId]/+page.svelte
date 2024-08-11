@@ -2,40 +2,39 @@
     import { invalidateAll } from '$app/navigation';
     import { calculateStats } from '$lib/stats.js';
 
-    /** @type {import('./$types').PageServerLoad} */
     export let data;
 
-    async function addGame(event) {
-        const formData = new FormData(event.currentTarget);
+    async function addGame(event: SubmitEvent) {
+        const formData = new FormData(event.currentTarget as HTMLFormElement);
         await handleFetch(`?/addGame`, formData);
     }
 
-    async function addLine(event) {
-        const formData = new FormData(event.currentTarget);
+    async function addLine(event: SubmitEvent) {
+        const formData = new FormData(event.currentTarget as HTMLFormElement);
         await handleFetch(`?/addLine`, formData);
     }
 
-    async function addPlayerToLine(event) {
-        const formData = new FormData(event.currentTarget);
+    async function addPlayerToLine(event: SubmitEvent) {
+        const formData = new FormData(event.currentTarget as HTMLFormElement);
         await handleFetch(`?/addPlayerToLine`, formData);
     }
 
-    async function removePlayerFromLine(event) {
-        const formData = new FormData(event.currentTarget);
+    async function removePlayerFromLine(event: SubmitEvent) {
+        const formData = new FormData(event.currentTarget as HTMLFormElement);
         await handleFetch(`?/removePlayerFromLine`, formData);
     }
 
-    async function addPlayer(event) {
-        const formData = new FormData(event.currentTarget);
+    async function addPlayer(event: SubmitEvent) {
+        const formData = new FormData(event.currentTarget as HTMLFormElement);
         await handleFetch(`?/addPlayer`, formData);
     }
 
-    async function newPlayer(event) {
-        const formData = new FormData(event.currentTarget);
+    async function newPlayer(event: SubmitEvent) {
+        const formData = new FormData(event.currentTarget as HTMLFormElement);
         await handleFetch(`?/newPlayer`, formData);
     }
 
-    async function handleFetch(url, formData) {
+    async function handleFetch(url: string, formData: FormData) {
         let response = await fetch(url, {
             method: 'POST',
             body: formData,
@@ -51,10 +50,10 @@
         }
     }
 
-    let playerStats = {};
-    for (let player of data.tournament.players) {
-        playerStats[player.id] = calculateStats(data.games, null, null, player.id);
-    }
+    let playerStats: {[key: number]: ReturnType<typeof calculateStats>} = data.tournament.players.reduce((acc, player) => {
+        acc[player.id] = calculateStats(data.games, null, null, player.id);
+        return acc;
+    }, {});
 </script>
 
 <h1>{data.tournament.name}</h1>

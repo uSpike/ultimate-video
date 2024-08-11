@@ -2,14 +2,17 @@
     import '$lib/buttons.css';
 
     import { onMount } from 'svelte';
+    import type { PageData } from './$types';
 
-    export let players = [];
-    export let selectedPrimaryPlayer;
-    export let selectedSecondaryPlayer;
-    export let selectedNotes;
+    type Player = PageData['tournament']['players'][number];
+
+    export let players: Player[] = [];
+    export let selectedPrimaryPlayer: Player | null = null;
+    export let selectedSecondaryPlayer: Player | null = null;
+    export let selectedNotes: PageData['actionTypes'][number]['notes'] = [];
     export let selectedComment: string | null;
 
-    export let actionType;
+    export let actionType: PageData['actionTypes'][number];
 
     class ShortcutManager {
         private keys: Map<string, () => void>;
@@ -76,7 +79,7 @@
             {#each players as player}
                 <input
                     type="radio"
-                    value={player.id}
+                    value={player}
                     id={`primary ${player.name}`}
                     bind:group={selectedPrimaryPlayer}
                 />
@@ -91,10 +94,10 @@
                 {#each players as player}
                     <input
                         type="radio"
-                        value={player.id}
+                        value={player}
                         id={`secondary ${player.name}`}
                         bind:group={selectedSecondaryPlayer}
-                        disabled={selectedPrimaryPlayer === player.id}
+                        disabled={selectedPrimaryPlayer.id === player.id}
                     />
                     <label for={`secondary ${player.name}`}>{@html shortcuts.makeShortcutText(player.name)}</label>
                 {/each}

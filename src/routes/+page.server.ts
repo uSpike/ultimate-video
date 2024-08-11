@@ -29,13 +29,13 @@ export const actions = {
         try {
             await prisma.gamePointActionType.create({
                 data: {
-                    type: type,
-                    description: description,
-                    requirePrimaryPlayer: requirePrimaryPlayer,
-                    requireSecondaryPlayer: requireSecondaryPlayer,
-                    primaryPlayerLabel: primaryPlayerLabel,
-                    secondaryPlayerLabel: secondaryPlayerLabel,
-                    requireState: requireState,
+                    type: String(type),
+                    description: String(description),
+                    requirePrimaryPlayer: String(requirePrimaryPlayer),
+                    requireSecondaryPlayer: String(requireSecondaryPlayer),
+                    primaryPlayerLabel: String(primaryPlayerLabel),
+                    secondaryPlayerLabel: String(secondaryPlayerLabel),
+                    requireState: String(requireState),
                 },
             });
         } catch (e) {
@@ -52,8 +52,8 @@ export const actions = {
         try {
             await prisma.gamePointActionNoteType.create({
                 data: {
-                    name: name,
-                    description: description,
+                    name: String(name),
+                    description: String(description),
                     type: { connect: { id: Number(typeId) } },
                 },
             });

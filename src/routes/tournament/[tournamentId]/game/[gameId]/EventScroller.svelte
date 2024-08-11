@@ -1,9 +1,11 @@
-<script>
-    export let currentTime;
-    export let video;
-    export let points;
+<script lang="ts">
+    import type { PageData } from './$types';
 
-    let eventElements = [];
+    export let currentTime: number;
+    export let video: HTMLVideoElement;
+    export let points: PageData['points'];
+
+    let eventElements: Array<HTMLDivElement> = [];
     const eventColors = {
         Started: '#0ff',
         Completion: '#0fa',
@@ -15,7 +17,7 @@
 
     let activeElementIndex = 0;
 
-    function scrollToCurrentEvent(time) {
+    function scrollToCurrentEvent(time: number) {
         if (points.length === 0) return;
         for (let point of points) {
             for (let i = 1; i < points.length; i++) {
@@ -36,13 +38,13 @@
         }
     }
 
-    function seek(time) {
+    function seek(time: number) {
         video.currentTime = Number(time);
     }
 
     $: scrollToCurrentEvent(currentTime);
 
-    function shortName(name) {
+    function shortName(name: string | null) {
         if (!name) return '';
         let parts = name.split(' ');
         return `${parts[0]} ${parts[1][0]}`;
@@ -62,7 +64,8 @@
                     style="background: {eventColors[action.type.type]}; white-space: nowrap; height: 1.2em"
                 >
                     <span>
-                        <a href="#" on:click={seek(action.time)}>{time}</a>
+                        <!-- svelte-ignore a11y-invalid-attribute -->
+                        <a href="#" on:click={() => seek(action.time)}>{time}</a>
                         {#if action.type.type == 'Started'}
                             Start point
                         {:else if action.type.type == 'Completion'}

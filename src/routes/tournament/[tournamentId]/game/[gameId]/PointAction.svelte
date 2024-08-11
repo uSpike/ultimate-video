@@ -1,36 +1,62 @@
+<script context="module" lang="ts">
+    import type { PageData } from './$types';
+
+    type Player = PageData['tournament']['players'][number];
+    type Line = PageData['tournament']['lines'][number];
+    type Point = PageData['points'][number];
+    type ActionType = PageData['actionTypes'][number];
+    type ActionNote = ActionType['notes'][number];
+
+    export type QueuedPoint = {
+        gameId: number;
+        offenseDefense: string;
+        lineId: number;
+        startTime: number;
+        endTime: number;
+        players: Player[],
+        actions: {
+            type: ActionType;
+            time: number;
+            notes: ActionType['notes'];
+            comment: string;
+            primaryPlayer: Player;
+            secondaryPlayer: Player;
+        }[];
+    };
+</script>
+
 <script lang="ts">
-    import PointActionButton from '$lib/components/PointActionButton.svelte';
+    import PointActionButton from './PointActionButton.svelte';
 
     import { invalidateAll } from '$app/navigation';
     import '$lib/buttons.css';
 
     let state: string = 'waiting'; // 'waiting', 'startPoint', 'doPoint'
-    let actionState = null; // 'Offense' or 'Defense'
+    let actionState: string | null = null; // 'Offense' or 'Defense'
 
     let selectedPlayerIds: number[] = [];
     let selectedOD: string | null = null;
-    let selectedLine = null;
+    let selectedLine: Line | null = null;
 
-    let selectedActionType = null;
-    let selectedNotes = [];
+    let selectedActionType: ActionType = null;
+    let selectedNotes: ActionNote[] = [];
     let selectedComment: string | null = null;
-    let selectedPrimaryPlayer = null;
-    let selectedSecondaryPlayer = null;
+    let selectedPrimaryPlayer: Player | null = null;
+    let selectedSecondaryPlayer: Player | null = null;
 
     $: FMPPlayers = data.tournament.players.filter((player) => player.genderMatch === 'fmp');
     $: MMPPlayers = data.tournament.players.filter((player) => player.genderMatch === 'mmp');
-    $: selectedLineId = data.tournament.lines.find((line) => line.name === selectedLine)?.id;
     $: selectedLinePlayerIds = data.tournament.players
-        .filter((player) => player.lines.find((line) => line.id === selectedLineId))
+        .filter((player) => player.lines.find((line) => line.id === selectedLine?.id))
         .map((player) => player.id);
 
-    export let queuedPoint = null;
-    export let data;
-    export let video;
-    export let currentTime;
+    export let queuedPoint: QueuedPoint | null = null;
+    export let data: PageData
+    export let video: HTMLVideoElement;
+    export let currentTime: number;
     $: currentPoint = data.points.find((point) => point.startTime <= currentTime && point.endTime >= currentTime);
 
-    const checkOverlapping = async (queued, current) => {
+    const checkOverlapping = async (queued: QueuedPoint, current: Point | null) => {
         if (queued && current) {
             await submitPoint();
             alert('Point overlapped with another point. Submitted current point.');
@@ -41,7 +67,7 @@
     async function queuePoint() {
         queuedPoint.gameId = data.game.id;
         queuedPoint.offenseDefense = selectedOD;
-        queuedPoint.lineId = data.tournament.lines.find((line) => line.name === selectedLine).id;
+        queuedPoint.lineId = selectedLine.id;
         queuedPoint.startTime = currentTime;
         queuedPoint.players = data.tournament.players.filter((player) => selectedPlayerIds.includes(player.id));
 
@@ -99,11 +125,11 @@
 
     async function submitPoint() {
         let form = new FormData();
-        form.append('gameId', data.game.id);
+        form.append('gameId', String(data.game.id));
         form.append('offenseDefense', selectedOD);
-        form.append('lineId', data.tournament.lines.find((line) => line.name === selectedLine).id);
-        form.append('startTime', queuedPoint.startTime);
-        form.append('endTime', currentTime);
+        form.append('lineId', String(selectedLine.id));
+        form.append('startTime', String(queuedPoint.startTime));
+        form.append('endTime', String(currentTime));
         selectedPlayerIds.forEach((playerId) => form.append('players', String(playerId)));
         form.append(
             'actions',
@@ -145,8 +171,11 @@
         video.pause();
         queuedPoint = {
             gameId: data.game.id,
+            offenseDefense: null,
+            lineId: null,
             startTime: currentTime,
             endTime: null,
+            players: [],
             actions: [],
         };
     }
@@ -263,7 +292,7 @@
 <div class="box">
     <div class="col-1">
         {#if state == 'waiting'}
-            <button disabled={currentPoint} on:click={startPoint}>Start Point</button>
+            <button disabled={currentPoint !== null} on:click={startPoint}>Start Point</button>
         {:else if state == 'startPoint'}
             <div style="float: left; width: 10vw;">
                 <form>
@@ -279,7 +308,7 @@
                         <input
                             disabled={selectedOD === null}
                             type="radio"
-                            value={line.name}
+                            value={line}
                             id={line.name}
                             bind:group={selectedLine}
                             on:change={updateSelectedPlayerIds}
@@ -333,13 +362,13 @@
                     <input
                         type="radio"
                         value={actionType}
-                        id={actionType.id}
+                        id={String(actionType.id)}
                         bind:group={selectedActionType}
                         on:click={selectAction}
                         disabled={!['any', actionState].includes(actionType.requireState) ||
                             selectedActionType?.type === actionType.type}
                     />
-                    <label for={actionType.id}>{actionType.type}</label>
+                    <label for={String(actionType.id)}>{actionType.type}</label>
                 {/each}
                 <button on:click={endPoint}>End Point</button>
             </form>
@@ -376,7 +405,7 @@
             <h2>
                 Point {@html getTimeFormattedLink(point.startTime)} - {@html getTimeFormattedLink(point.endTime)}
             </h2>
-            <a href="?/deletePoint" on:click={deletePoint(point)}>Delete</a>
+            <a href="?/deletePoint" on:click={() => deletePoint(point)}>Delete</a>
             <p>{point.offenseDefense}: {point.line.name}</p>
             <p>Players: {point.players.map((player) => player.name).join(', ')}</p>
             <p>Result: {getPointResult(point)}</p>

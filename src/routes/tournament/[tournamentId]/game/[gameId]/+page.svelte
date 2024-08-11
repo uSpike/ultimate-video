@@ -1,14 +1,13 @@
 <script lang="ts">
-    import ProgressBar from '$lib/components/ProgressBar.svelte';
-    import EventScroller from '$lib/components/EventScroller.svelte';
-    import PointAction from '$lib/components/PointAction.svelte';
+    import ProgressBar from './ProgressBar.svelte';
+    import EventScroller from './EventScroller.svelte';
+    import PointAction from './PointAction.svelte';
 
     import * as THREE from 'three';
 
-    /** @type {import('./$types').PageServerLoad} */
     export let data;
 
-    let video;
+    let video: HTMLVideoElement;
     let videoPlaying = false;
     let perspectiveMode = false;
     let showPerspectiveControls = false;
@@ -42,8 +41,8 @@
         }
     }
 
-    function goToGame(event) {
-        window.location.href = selectedGame;
+    function goToGame(event: Event) {
+        window.location.href = String(selectedGame);
     }
 
     function toggleEditMode() {
@@ -54,7 +53,7 @@
         editMode = !editMode;
     }
 
-    let canvas;
+    let canvas: HTMLCanvasElement;
 
     let videoHeight = 0;
     let videoWidth = 0;
@@ -66,7 +65,9 @@
         focalLength: 2400,
     };
 
-    let renderer, scene, camera;
+    let renderer: THREE.WebGLRenderer;
+    let scene: THREE.Scene;
+    let camera: THREE.PerspectiveCamera;
 
     let latitude = 0;
     let longitude = 0;
@@ -79,7 +80,8 @@
     let mouseX = 0;
     let mouseY = 0;
 
-    let geometry, mesh;
+    let geometry: THREE.CylinderGeometry;
+    let mesh: THREE.Mesh;
 
     // force one update to get the initial values
     let perspectiveMoved = true;
@@ -103,7 +105,7 @@
         let url = new URL(window.location.href);
         let time = url.searchParams.get('time');
         if (time) {
-            video.currentTime = time;
+            video.currentTime = Number(time);
         }
 
         videoHeight = video.videoHeight;
@@ -158,10 +160,19 @@
     function updateControls() {
         perspectiveMoved = true;
         let s = videoWidth / controls.focalLength;
-        geometry.radiusTop = controls.focalLength;
-        geometry.radiusBottom = controls.focalLength;
-        geometry.thetaLength = s;
-        geometry.thetaStart = Math.PI / 2 - s / 2;
+        const newGeometry = new THREE.CylinderGeometry(
+            controls.focalLength,
+            controls.focalLength,
+            videoHeight,
+            512,
+            512,
+            true,
+            Math.PI / 2 - s / 2,
+            s,
+        );
+        newGeometry.scale(-1, 1, 1);
+        mesh.geometry.dispose();
+        mesh.geometry = newGeometry;
         mesh.rotation.z = THREE.MathUtils.degToRad(controls.screenVerticalRotation);
         mesh.rotation.x = THREE.MathUtils.degToRad(controls.screenHorizontalRotation);
     }
@@ -192,7 +203,7 @@
         requestAnimationFrame(updatePerspectiveMode);
     }
 
-    function onCanvasMouseDown(event) {
+    function onCanvasMouseDown(event: MouseEvent) {
         if (event.button != 0) {
             return;
         }
@@ -206,7 +217,7 @@
         originalLongitude = longitude;
     }
 
-    function onCanvasMouseMove(event) {
+    function onCanvasMouseMove(event: MouseEvent) {
         if (!mouseDown) {
             return;
         }
@@ -216,14 +227,14 @@
         latitude = (mouseY - event.clientY) * 0.1 + originalLatitude;
     }
 
-    function onCanvasMouseUp(event) {
+    function onCanvasMouseUp(event: MouseEvent) {
         if (!mouseDown) {
             return;
         }
         mouseDown = false;
     }
 
-    function onCanvasWheel(event) {
+    function onCanvasWheel(event: WheelEvent) {
         event.preventDefault();
         event.stopPropagation();
 
@@ -252,7 +263,7 @@
     function onPause() {
         videoPlaying = false;
     }
-    function onKeypress(event) {
+    function onKeypress(event: KeyboardEvent) {
         if (event.key === 'p') {
             if (videoPlaying) {
                 video.pause();

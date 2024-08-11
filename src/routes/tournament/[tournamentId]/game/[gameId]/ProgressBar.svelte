@@ -1,10 +1,14 @@
-<script>
-    export let currentTime;
-    export let duration;
-    export let video;
+<script lang="ts">
+    import type { PageData } from "./$types";
+    import type { QueuedPoint } from "./PointAction.svelte";
 
-    export let data;
-    export let queuedPoint;
+    export let currentTime: number;
+    export let duration: number;
+    export let video: HTMLVideoElement;
+
+    export let data: PageData;
+
+    export let queuedPoint: QueuedPoint;
 
     function seekVideo(event) {
         // don't allow seeking during editing
@@ -27,6 +31,8 @@
 </div>
 
 <!-- tracker -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div on:click={seekVideo} class="tracker">
     {#each data.points as point}
         {@const pointDuration = point.endTime - point.startTime}

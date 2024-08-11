@@ -1,4 +1,21 @@
-export function calculateStats(games, gameId: Number | null, lineId: Number | null, playerId: Number) {
+import { Prisma } from '@prisma/client';
+
+type Game = Prisma.GameGetPayload<{
+    include: {
+        points: {
+            include: {
+                players: true;
+                actions: {
+                    include: {
+                        type: true;
+                    };
+                };
+            };
+        };
+    };
+}>;
+
+export function calculateStats(games: Array<Game>, gameId: Number | null, lineId: Number | null, playerId: Number) {
     let stats = {
         timePlayed: 0,
         pointsPlayed: 0,
@@ -30,7 +47,6 @@ export function calculateStats(games, gameId: Number | null, lineId: Number | nu
 
         for (let point of game.points) {
             if (lineId != null && point.lineId != lineId) continue;
-
             if (!point.players.find((p) => p.id === playerId)) continue;
 
             let didRecordTouchLookPoint = false;
@@ -46,10 +62,9 @@ export function calculateStats(games, gameId: Number | null, lineId: Number | nu
 
             for (let i = 0; i < point.actions.length; i++) {
                 let action = point.actions[i];
+                let lastAction = point.actions[i - 1];
                 let isPP = action.primaryPlayerId == playerId;
                 let isSP = action.secondaryPlayerId == playerId;
-
-                let lastAction;
 
                 switch (action.type.type) {
                     case 'Completion':
@@ -73,7 +88,6 @@ export function calculateStats(games, gameId: Number | null, lineId: Number | nu
                         if (isPP) stats.goals++;
                         if (isSP) stats.assists++;
 
-                        lastAction = point.actions[-1];
                         if (lastAction?.type.type == 'Completion' && lastAction?.primaryPlayerId == playerId) {
                             stats.hockey++;
                         }

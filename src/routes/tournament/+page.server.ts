@@ -1,6 +1,6 @@
 import { handlePrismaError } from '$lib/prisma';
 import prisma from '$lib/prisma';
-import { Actions, PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
     const data = {
@@ -18,7 +18,7 @@ export const actions = {
         try {
             await prisma.tournament.create({
                 data: {
-                    name: name,
+                    name: String(name),
                 },
             });
         } catch (e) {
@@ -33,7 +33,7 @@ export const actions = {
         try {
             await prisma.tournament.delete({
                 where: {
-                    id: parseInt(id),
+                    id: Number(id),
                 },
             });
         } catch (e) {

@@ -1,20 +1,22 @@
-<script>
-    /** @type {import('./$types').PageServerLoad} */
+<script lang="ts">
+    import type { PageData } from './$types';
     export let data;
 
-    function timeToString(time) {
+    type Action = PageData["tournament"]["games"][number]["points"][number]["actions"][number];
+
+    function timeToString(time: number) {
         return new Date(time * 1000).toISOString().slice(11, 19);
     }
 
-    function filterActions(games, actionCall) {
+    function filterActions(games: PageData['tournament']['games'], actionCall: (action: Action) => boolean) {
         return games.flatMap((game) => game.points.flatMap((point) => point.actions.filter(actionCall)));
     }
 
-    let filterThrows = (action) => action.type == 'Completion' && action.primaryPlayer.id == data.player.id;
-    let filterCatches = (action) => action.type == 'Completion' && action.secondaryPlayer.id == data.player.id;
-    let filterDrops = (action) => action.type == 'Drop' && action.primaryPlayer?.id == data.player.id;
-    let filterTurnovers = (action) => action.type == 'Turnover' && action.primaryPlayer?.id == data.player.id;
-    let filterDefended = (action) => action.type == 'Defended' && action.primaryPlayer?.id == data.player.id;
+    let filterThrows = (action: Action) => action.type.type == 'Completion' && action.primaryPlayer.id == data.player.id;
+    let filterCatches = (action: Action) => action.type.type == 'Completion' && action.secondaryPlayer.id == data.player.id;
+    let filterDrops = (action: Action) => action.type.type == 'Drop' && action.primaryPlayer?.id == data.player.id;
+    let filterTurnovers = (action: Action) => action.type.type == 'Turnover' && action.primaryPlayer?.id == data.player.id;
+    let filterDefended = (action: Action) => action.type.type == 'Defended' && action.primaryPlayer?.id == data.player.id;
 
     let throws = filterActions(data.tournament.games, filterThrows);
     let catches = filterActions(data.tournament.games, filterCatches);
@@ -56,7 +58,7 @@
                 </a>
                 <ul>
                     {#each point.actions as action}
-                        {#if action.type == 'Completion'}
+                        {#if action.type.type == 'Completion'}
                             {#if data.player.id == action.primaryPlayer.id}
                                 <li>
                                     <a href="../game/{game.id}?time={action.time - 5}"
@@ -70,9 +72,9 @@
                                     >
                                 </li>
                             {/if}
-                        {:else if action.type == 'Turnover'}
+                        {:else if action.type.type == 'Turnover'}
                             <li><mark><a href="../game/{game.id}?time={action.time - 5}">Turnover</a></mark></li>
-                        {:else if action.type == 'Goal'}
+                        {:else if action.type.type == 'Goal'}
                             {#if data.player.id == action.primaryPlayer.id}
                                 <li>
                                     <a href="../game/{game.id}?time={action.time - 5}"
@@ -86,7 +88,7 @@
                                     >
                                 </li>
                             {/if}
-                        {:else if action.type == 'Defended'}
+                        {:else if action.type.type == 'Defended'}
                             <li><a href="../game/{game.id}?time={action.time - 5}">Defended</a></li>
                         {/if}
                     {/each}
@@ -97,23 +99,4 @@
 {/each}
 
 <style>
-    label {
-        display: inline-block;
-        padding: 10px 20px;
-        margin: 5px;
-        background-color: #f0f0f0;
-        color: black;
-        border: 2px solid #ccc;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    input[type='radio'] {
-        display: none; /* Hide the checkbox */
-    }
-
-    input[type='radio']:checked + label {
-        background-color: #4caf50; /* Green background when checked */
-        color: white; /* White text when checked */
-    }
 </style>

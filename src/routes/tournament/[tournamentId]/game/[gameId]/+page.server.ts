@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
-import { Actions, PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
     const data = {
@@ -59,7 +59,7 @@ export const actions = {
         let startTime = data.get('startTime');
         let endTime = data.get('endTime');
         let offenseDefense = data.get('offenseDefense');
-        let actions = JSON.parse(data.get('actions'));
+        let actions = JSON.parse(String(data.get('actions')));
 
         if (!gameId) error(400, 'Game ID is required');
         if (!lineId) error(400, 'Line ID is required');
@@ -75,7 +75,7 @@ export const actions = {
                 line: { connect: { id: Number(lineId) } },
                 startTime: Number(startTime),
                 endTime: Number(endTime),
-                offenseDefense: offenseDefense,
+                offenseDefense: String(offenseDefense),
                 players: {
                     connect: players.map((num) => ({ id: Number(num) })),
                 },

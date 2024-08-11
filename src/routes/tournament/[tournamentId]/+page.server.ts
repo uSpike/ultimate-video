@@ -1,7 +1,7 @@
-import { error, Page, redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import { Prisma } from '@prisma/client';
-import { Actions, PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 function handlePrismaError(e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -63,10 +63,10 @@ export const actions = {
         try {
             await prisma.game.create({
                 data: {
-                    opponent,
-                    date: new Date(date),
+                    opponent: String(opponent),
+                    date: new Date(String(date)),
                     tournament: { connect: { id: Number(tournamentId) } },
-                    videoFile: videoFile,
+                    videoFile: String(videoFile),
                 },
             });
         } catch (e) {
@@ -83,7 +83,7 @@ export const actions = {
         try {
             await prisma.playerLine.create({
                 data: {
-                    name,
+                    name: String(name),
                     tournament: { connect: { id: Number(tournamentId) } },
                 },
             });
@@ -142,9 +142,9 @@ export const actions = {
         try {
             await prisma.player.create({
                 data: {
-                    name,
+                    name: String(name),
                     tournaments: { connect: { id: Number(tournamentId) } },
-                    genderMatch: genderMatch,
+                    genderMatch: String(genderMatch),
                 },
             });
         } catch (e) {
