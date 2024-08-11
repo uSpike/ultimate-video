@@ -13,7 +13,7 @@
         lineId: number;
         startTime: number;
         endTime: number;
-        players: Player[],
+        players: Player[];
         actions: {
             type: ActionType;
             time: number;
@@ -51,7 +51,7 @@
         .map((player) => player.id);
 
     export let queuedPoint: QueuedPoint | null = null;
-    export let data: PageData
+    export let data: PageData;
     export let video: HTMLVideoElement;
     export let currentTime: number;
     $: currentPoint = data.points.find((point) => point.startTime <= currentTime && point.endTime >= currentTime);

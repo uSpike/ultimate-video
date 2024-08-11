@@ -2,7 +2,7 @@
     import type { PageData } from './$types';
     export let data;
 
-    type Action = PageData["tournament"]["games"][number]["points"][number]["actions"][number];
+    type Action = PageData['tournament']['games'][number]['points'][number]['actions'][number];
 
     function timeToString(time: number) {
         return new Date(time * 1000).toISOString().slice(11, 19);
@@ -12,11 +12,15 @@
         return games.flatMap((game) => game.points.flatMap((point) => point.actions.filter(actionCall)));
     }
 
-    let filterThrows = (action: Action) => action.type.type == 'Completion' && action.primaryPlayer.id == data.player.id;
-    let filterCatches = (action: Action) => action.type.type == 'Completion' && action.secondaryPlayer.id == data.player.id;
+    let filterThrows = (action: Action) =>
+        action.type.type == 'Completion' && action.primaryPlayer.id == data.player.id;
+    let filterCatches = (action: Action) =>
+        action.type.type == 'Completion' && action.secondaryPlayer.id == data.player.id;
     let filterDrops = (action: Action) => action.type.type == 'Drop' && action.primaryPlayer?.id == data.player.id;
-    let filterTurnovers = (action: Action) => action.type.type == 'Turnover' && action.primaryPlayer?.id == data.player.id;
-    let filterDefended = (action: Action) => action.type.type == 'Defended' && action.primaryPlayer?.id == data.player.id;
+    let filterTurnovers = (action: Action) =>
+        action.type.type == 'Turnover' && action.primaryPlayer?.id == data.player.id;
+    let filterDefended = (action: Action) =>
+        action.type.type == 'Defended' && action.primaryPlayer?.id == data.player.id;
 
     let throws = filterActions(data.tournament.games, filterThrows);
     let catches = filterActions(data.tournament.games, filterCatches);

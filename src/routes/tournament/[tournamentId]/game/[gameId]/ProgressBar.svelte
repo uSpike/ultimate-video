@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { PageData } from "./$types";
-    import type { QueuedPoint } from "./PointAction.svelte";
+    import type { PageData } from './$types';
+    import type { QueuedPoint } from './PointAction.svelte';
 
     export let currentTime: number;
     export let duration: number;

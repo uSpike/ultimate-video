@@ -50,10 +50,13 @@
         }
     }
 
-    let playerStats: {[key: number]: ReturnType<typeof calculateStats>} = data.tournament.players.reduce((acc, player) => {
-        acc[player.id] = calculateStats(data.games, null, null, player.id);
-        return acc;
-    }, {});
+    let playerStats: { [key: number]: ReturnType<typeof calculateStats> } = data.tournament.players.reduce(
+        (acc, player) => {
+            acc[player.id] = calculateStats(data.games, null, null, player.id);
+            return acc;
+        },
+        {},
+    );
 </script>
 
 <h1>{data.tournament.name}</h1>

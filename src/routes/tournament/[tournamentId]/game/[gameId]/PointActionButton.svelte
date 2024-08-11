@@ -77,12 +77,7 @@
         <span>{actionType.primaryPlayerLabel}</span>
         <form>
             {#each players as player}
-                <input
-                    type="radio"
-                    value={player}
-                    id={`primary ${player.name}`}
-                    bind:group={selectedPrimaryPlayer}
-                />
+                <input type="radio" value={player} id={`primary ${player.name}`} bind:group={selectedPrimaryPlayer} />
                 <label for={`primary ${player.name}`}>{@html shortcuts.makeShortcutText(player.name)}</label>
             {/each}
         </form>
