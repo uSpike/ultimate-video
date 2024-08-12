@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export default prisma;
 
-export function handlePrismaError(e) {
+export function handlePrismaError(e: unknown) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
         error(400, e.message);
     } else {

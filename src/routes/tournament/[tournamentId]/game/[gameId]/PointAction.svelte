@@ -1,4 +1,10 @@
-<script context="module" lang="ts">
+<script lang="ts">
+    import PointActionButton from './PointActionButton.svelte';
+    import { QueuedPoint } from './queuedPoint';
+
+    import { invalidateAll } from '$app/navigation';
+    import '$lib/buttons.css';
+
     import type { PageData } from './$types';
 
     type Player = PageData['tournament']['players'][number];
@@ -7,92 +13,82 @@
     type ActionType = PageData['actionTypes'][number];
     type ActionNote = ActionType['notes'][number];
 
-    export type QueuedPoint = {
-        gameId: number;
-        offenseDefense: string;
-        lineId: number;
-        startTime: number;
-        endTime: number;
-        players: Player[];
-        actions: {
-            type: ActionType;
-            time: number;
-            notes: ActionType['notes'];
-            comment: string;
-            primaryPlayer: Player;
-            secondaryPlayer: Player;
-        }[];
+    type Action = {
+        type: ActionType;
+        time: number;
+        notes: ActionNote[];
+        comment: string | null;
+        primaryPlayer: Player | null;
+        secondaryPlayer: Player | null;
     };
-</script>
 
-<script lang="ts">
-    import PointActionButton from './PointActionButton.svelte';
-
-    import { invalidateAll } from '$app/navigation';
-    import '$lib/buttons.css';
+    function assert(condition: unknown): asserts condition {
+        if (!condition) throw new Error('Assertion failed');
+    }
 
     let state: string = 'waiting'; // 'waiting', 'startPoint', 'doPoint'
     let actionState: string | null = null; // 'Offense' or 'Defense'
 
-    let selectedPlayerIds: number[] = [];
+    let selectedPlayers: Player[] = [];
     let selectedOD: string | null = null;
     let selectedLine: Line | null = null;
 
-    let selectedActionType: ActionType = null;
+    let selectedActionType: ActionType | null = null;
     let selectedNotes: ActionNote[] = [];
     let selectedComment: string | null = null;
     let selectedPrimaryPlayer: Player | null = null;
     let selectedSecondaryPlayer: Player | null = null;
 
+    let selectedActions: Action[] = [];
+
     $: FMPPlayers = data.tournament.players.filter((player) => player.genderMatch === 'fmp');
     $: MMPPlayers = data.tournament.players.filter((player) => player.genderMatch === 'mmp');
-    $: selectedLinePlayerIds = data.tournament.players
-        .filter((player) => player.lines.find((line) => line.id === selectedLine?.id))
-        .map((player) => player.id);
 
-    export let queuedPoint: QueuedPoint | null = null;
+    export let queuedPoint: QueuedPoint;
     export let data: PageData;
     export let video: HTMLVideoElement;
     export let currentTime: number;
     $: currentPoint = data.points.find((point) => point.startTime <= currentTime && point.endTime >= currentTime);
 
     const checkOverlapping = async (queued: QueuedPoint, current: Point | null) => {
-        if (queued && current) {
+        if (queued.started && current) {
             await submitPoint();
             alert('Point overlapped with another point. Submitted current point.');
         }
     };
-    $: checkOverlapping(queuedPoint, currentPoint);
+    $: if (currentPoint) {
+        checkOverlapping(queuedPoint, currentPoint);
+    }
 
     async function queuePoint() {
-        queuedPoint.gameId = data.game.id;
-        queuedPoint.offenseDefense = selectedOD;
-        queuedPoint.lineId = selectedLine.id;
+        assert(selectedOD);
+        assert(selectedLine);
+        assert(selectedPlayers.length > 0);
+
         queuedPoint.startTime = currentTime;
-        queuedPoint.players = data.tournament.players.filter((player) => selectedPlayerIds.includes(player.id));
 
         actionState = selectedOD.toLowerCase();
         goStateDoPoint();
     }
 
     async function addAction() {
-        if (!queuedPoint) return;
-
-        if (selectedPrimaryPlayer && selectedPrimaryPlayer === selectedSecondaryPlayer) {
+        if (selectedPrimaryPlayer !== null && selectedPrimaryPlayer === selectedSecondaryPlayer) {
             alert('Primary and secondary players cannot be the same.');
             return;
         }
 
-        if (selectedActionType.type === 'Injury') {
+        if (selectedActionType?.type === 'Injury') {
+            assert(selectedSecondaryPlayer);
             // add substitute player
-            queuedPoint.players = [...queuedPoint.players, selectedSecondaryPlayer];
+            selectedPlayers = [...selectedPlayers, selectedSecondaryPlayer];
         }
 
-        queuedPoint.actions = [
-            ...queuedPoint.actions,
+        assert(selectedActionType);
+        selectedActions = [
+            ...selectedActions,
             {
-                time: currentTime,
                 type: selectedActionType,
+                time: currentTime,
                 notes: selectedNotes,
                 comment: selectedComment,
                 primaryPlayer: selectedPrimaryPlayer,
@@ -103,7 +99,7 @@
         selectedPrimaryPlayer = null;
         selectedSecondaryPlayer = null;
 
-        let actionType = selectedActionType.type;
+        let actionType = selectedActionType?.type;
         selectedActionType = null;
         selectedNotes = [];
         selectedComment = null;
@@ -124,23 +120,26 @@
     }
 
     async function submitPoint() {
+        assert(selectedOD);
+        assert(selectedLine);
+
         let form = new FormData();
         form.append('gameId', String(data.game.id));
         form.append('offenseDefense', selectedOD);
         form.append('lineId', String(selectedLine.id));
         form.append('startTime', String(queuedPoint.startTime));
         form.append('endTime', String(currentTime));
-        selectedPlayerIds.forEach((playerId) => form.append('players', String(playerId)));
+        selectedPlayers.forEach((player) => form.append('players', String(player.id)));
         form.append(
             'actions',
             JSON.stringify(
-                queuedPoint.actions.map((action) => ({
+                selectedActions.map((action) => ({
                     typeId: action.type.id,
                     time: action.time,
                     notes: action.notes.map((note) => note.id),
                     comment: action.comment,
-                    primaryPlayer: action.primaryPlayer,
-                    secondaryPlayer: action.secondaryPlayer,
+                    primaryPlayerId: action.primaryPlayer?.id,
+                    secondaryPlayerId: action.secondaryPlayer?.id,
                 })),
             ),
         );
@@ -149,6 +148,8 @@
             method: 'POST',
             body: form,
         });
+
+        console.log(res);
 
         goStateWaiting();
 
@@ -167,22 +168,15 @@
         state = 'startPoint';
         selectedOD = null;
         selectedLine = null;
-        selectedPlayerIds = [];
+        selectedPlayers = [];
+        selectedActions = [];
         video.pause();
-        queuedPoint = {
-            gameId: data.game.id,
-            offenseDefense: null,
-            lineId: null,
-            startTime: currentTime,
-            endTime: null,
-            players: [],
-            actions: [],
-        };
+        queuedPoint.start(currentTime);
     }
 
     function goStateWaiting() {
         state = 'waiting';
-        queuedPoint = null;
+        queuedPoint.end();
         video.play();
     }
 
@@ -222,26 +216,25 @@
         video.pause();
     }
 
-    $: lastAction = queuedPoint?.actions[queuedPoint.actions.length - 1];
-
-    $: if (actionState == 'offense' && ['Completion', 'Turnover', 'Goal'].includes(selectedActionType?.type)) {
+    $: if (
+        selectedActionType &&
+        actionState == 'offense' &&
+        ['Completion', 'Turnover', 'Goal'].includes(selectedActionType.type)
+    ) {
+        let lastAction = selectedActions[selectedActions.length - 1];
         // if the last action was a completion, auto-fill the primary player as the previous receiver
-        if (lastAction?.type.type === 'Completion') {
+        if (lastAction && lastAction.type.type === 'Completion') {
             selectedPrimaryPlayer = lastAction.secondaryPlayer;
         }
     }
 
-    function updateSelectedPlayerIds() {
-        selectedPlayerIds = [...selectedLinePlayerIds];
-    }
-
-    function getTimeFormattedLink(time) {
+    function getTimeFormattedLink(time: number) {
         let text = new Date(time * 1000).toISOString().slice(11, 19);
         let url = `?time=${time}`;
         return `<a href="${url}">${text}</a>`;
     }
 
-    function getPointResult(point) {
+    function getPointResult(point: Point) {
         for (let i = 0; i < point.actions.length; i++) {
             if (point.actions[i].type.type === 'Goal') {
                 return 'Goal';
@@ -252,12 +245,12 @@
         return null;
     }
 
-    async function deletePoint(point) {
+    async function deletePoint(point: Point) {
         let ok = confirm('Are you sure you want to delete this point?');
         if (!ok) return;
 
         let form = new FormData();
-        form.append('pointId', point.id);
+        form.append('pointId', String(point.id));
 
         console.log(JSON.stringify(form));
         let response = await fetch(`?/deletePoint`, {
@@ -287,12 +280,19 @@
             submitDisabled = selectedSecondaryPlayer === null;
         }
     }
+
+    function updateSelectedPlayers() {
+        // fill-in players on the selected line
+        selectedPlayers = data.tournament.players.filter((player) =>
+            player.lines.find((line) => line.id === selectedLine?.id),
+        );
+    }
 </script>
 
 <div class="box">
     <div class="col-1">
         {#if state == 'waiting'}
-            <button disabled={currentPoint !== null} on:click={startPoint}>Start Point</button>
+            <button disabled={currentPoint === null} on:click={startPoint}>Start Point</button>
         {:else if state == 'startPoint'}
             <div style="float: left; width: 10vw;">
                 <form>
@@ -311,7 +311,7 @@
                             value={line}
                             id={line.name}
                             bind:group={selectedLine}
-                            on:change={updateSelectedPlayerIds}
+                            on:change={updateSelectedPlayers}
                         />
                         <label for={line.name}>{line.name}</label>
                     {/each}
@@ -324,9 +324,9 @@
                             <input
                                 disabled={selectedLine === null}
                                 type="checkbox"
-                                value={player.id}
+                                value={player}
                                 id={player.name}
-                                bind:group={selectedPlayerIds}
+                                bind:group={selectedPlayers}
                             />
                             <label for={player.name}>{player.name}</label>
                         {/each}
@@ -340,9 +340,9 @@
                             <input
                                 disabled={selectedLine === null}
                                 type="checkbox"
-                                value={player.id}
+                                value={player}
                                 id={player.name}
-                                bind:group={selectedPlayerIds}
+                                bind:group={selectedPlayers}
                             />
                             <label for={player.name}>{player.name}</label>
                         {/each}
@@ -350,10 +350,10 @@
                 </form>
             </div>
             <div style="clear: both;">
-                <span>{selectedPlayerIds.length} players selected</span>
+                <span>{selectedPlayers.length} players selected</span>
                 <br />
 
-                <button disabled={selectedPlayerIds.length < 1} on:click={queuePoint}>Submit</button>
+                <button disabled={selectedPlayers.length < 1} on:click={queuePoint}>Submit</button>
                 <button on:click={cancelStartPoint}>Cancel</button>
             </div>
         {:else if state == 'doPoint'}
@@ -377,7 +377,7 @@
             <hr />
             {#if selectedActionType}
                 <PointActionButton
-                    bind:players={queuedPoint.players}
+                    bind:players={selectedPlayers}
                     bind:selectedPrimaryPlayer
                     bind:selectedSecondaryPlayer
                     bind:selectedNotes
@@ -390,15 +390,15 @@
     </div>
 
     <div class="col-2" style="height: 20vh; overflow-y: scroll">
-        {#if queuedPoint}
+        {#if queuedPoint.started}
             <h2>
                 Queued {@html getTimeFormattedLink(queuedPoint.startTime)} - {@html getTimeFormattedLink(currentTime)}
             </h2>
-            {#if queuedPoint.lineId}
-                <p>Line: {data.tournament.lines.find((line) => line.id === queuedPoint.lineId)?.name}</p>
+            {#if selectedLine !== null}
+                <p>Line: {selectedLine.name}</p>
             {/if}
-            {#if queuedPoint.players}
-                <p>Players: {queuedPoint.players?.map((player) => player.name).join(', ')}</p>
+            {#if selectedPlayers}
+                <p>Players: {selectedPlayers.map((player) => player.name).join(', ')}</p>
             {/if}
         {/if}
         {#each [...data.points].reverse() as point}

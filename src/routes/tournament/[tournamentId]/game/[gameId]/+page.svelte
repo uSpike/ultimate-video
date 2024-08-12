@@ -2,6 +2,7 @@
     import ProgressBar from './ProgressBar.svelte';
     import EventScroller from './EventScroller.svelte';
     import PointAction from './PointAction.svelte';
+    import { QueuedPoint } from './queuedPoint';
 
     import * as THREE from 'three';
 
@@ -17,7 +18,7 @@
 
     let selectedGame = data.game.id;
 
-    let queuedPoint = null;
+    let queuedPoint = new QueuedPoint();
     let editMode = false;
     let skipBetweenMode = false;
 
@@ -46,7 +47,7 @@
     }
 
     function toggleEditMode() {
-        if (editMode && queuedPoint) {
+        if (editMode && queuedPoint.started) {
             alert('You must submit the current point before exiting edit mode.');
             return;
         }

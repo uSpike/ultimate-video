@@ -1,7 +1,6 @@
 <script lang="ts">
     import '$lib/buttons.css';
 
-    import { onMount } from 'svelte';
     import type { PageData } from './$types';
 
     type Player = PageData['tournament']['players'][number];
@@ -13,64 +12,7 @@
     export let selectedComment: string | null;
 
     export let actionType: PageData['actionTypes'][number];
-
-    class ShortcutManager {
-        private keys: Map<string, () => void>;
-        private text: Map<string, string>;
-
-        constructor() {
-            // key -> callback
-            this.keys = new Map();
-            // text -> key
-            this.text = new Map();
-        }
-
-        clear() {
-            this.keys.clear();
-            this.text.clear();
-        }
-
-        addShortcut(text, callback) {
-            text = text.trim().toLowerCase();
-            for (let i = 0; i < text.length; i++) {
-                let key = text[i];
-                if (key === ' ') {
-                    continue;
-                }
-                if (!this.keys.has(key)) {
-                    this.keys.set(key, callback);
-                    this.text.set(text, key);
-                    return key;
-                }
-            }
-        }
-
-        makeShortcutText(text) {
-            text = text.trim().toLowerCase();
-            let key = this.text.get(text);
-            if (!key) return text;
-            let index = text.indexOf(key);
-            return `${text.slice(0, index)}<u>${key}</u>${text.slice(index + 1)}`;
-        }
-
-        onKeyDown(event) {
-            let key = event.key.toLowerCase();
-
-            if (this.keys.has(key)) {
-                let callback = this.keys.get(key);
-                callback();
-            }
-        }
-    }
-
-    let shortcuts = new ShortcutManager();
-
-    onMount(() => {
-        shortcuts.clear();
-    });
 </script>
-
-<svelte:window on:keydown={shortcuts.onKeyDown} />
 
 {#if actionType.requirePrimaryPlayer !== 'false'}
     <div style="clear: both">
@@ -78,7 +20,7 @@
         <form>
             {#each players as player}
                 <input type="radio" value={player} id={`primary ${player.name}`} bind:group={selectedPrimaryPlayer} />
-                <label for={`primary ${player.name}`}>{@html shortcuts.makeShortcutText(player.name)}</label>
+                <label for={`primary ${player.name}`}>{player.name}</label>
             {/each}
         </form>
     </div>
@@ -92,9 +34,9 @@
                         value={player}
                         id={`secondary ${player.name}`}
                         bind:group={selectedSecondaryPlayer}
-                        disabled={selectedPrimaryPlayer.id === player.id}
+                        disabled={selectedPrimaryPlayer?.id === player.id}
                     />
-                    <label for={`secondary ${player.name}`}>{@html shortcuts.makeShortcutText(player.name)}</label>
+                    <label for={`secondary ${player.name}`}>{player.name}</label>
                 {/each}
             </form>
         </div>

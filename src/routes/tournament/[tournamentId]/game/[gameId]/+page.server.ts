@@ -1,14 +1,20 @@
-import { error } from '@sveltejs/kit';
+import { fail, error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
 
 export const load: PageServerLoad = async ({ params }) => {
     const data = {
-        tournament: await prisma.tournament.findFirst({
+        tournament: await prisma.tournament.findFirstOrThrow({
             where: { id: Number(params.tournamentId) },
             include: {
                 games: true,
-                lines: true,
+                lines: {
+                    include: {
+                        primaryPlayers: true,
+                    },
+                },
                 players: {
                     include: {
                         lines: true,
@@ -16,7 +22,7 @@ export const load: PageServerLoad = async ({ params }) => {
                 },
             },
         }),
-        game: await prisma.game.findUnique({
+        game: await prisma.game.findUniqueOrThrow({
             where: { id: Number(params.gameId) },
         }),
         points: await prisma.gamePoint.findMany({
@@ -49,48 +55,66 @@ export const load: PageServerLoad = async ({ params }) => {
     return data;
 };
 
+const submitPointSchema = zfd.formData({
+    gameId: zfd.numeric(z.number().min(0)),
+    lineId: zfd.numeric(z.number().min(0)),
+    players: zfd.repeatable(z.array(zfd.numeric(z.number().min(0)))),
+    startTime: zfd.numeric(z.number().min(0)),
+    endTime: zfd.numeric(z.number().min(0)),
+    offenseDefense: z.enum(['Offense', 'Defense']),
+    actions: zfd.json(
+        z.array(
+            z.object({
+                typeId: z.number().min(0),
+                time: z.number().min(0),
+                notes: z.array(z.number().min(0)),
+                comment: z.string().nullable(),
+                primaryPlayerId: z.number().nullable(),
+                secondaryPlayerId: z.number().nullable(),
+            }),
+        ),
+    ),
+});
+
+const deletePointSchema = zfd.formData({
+    pointId: zfd.numeric(z.number().min(0)),
+});
+
 export const actions = {
     submitPoint: async ({ request }) => {
         const data = await request.formData();
+        const parsed = submitPointSchema.safeParse(data);
 
-        let gameId = data.get('gameId');
-        let lineId = data.get('lineId');
-        let players = data.getAll('players');
-        let startTime = data.get('startTime');
-        let endTime = data.get('endTime');
-        let offenseDefense = data.get('offenseDefense');
-        let actions = JSON.parse(String(data.get('actions')));
-
-        if (!gameId) error(400, 'Game ID is required');
-        if (!lineId) error(400, 'Line ID is required');
-        if (players.length < 1) error(400, 'You must select at least one player');
-        if (!startTime) error(400, 'Start time is required');
-        if (!endTime) error(400, 'End time is required');
-        if (!offenseDefense) error(400, 'Offense/Defense is required');
-        if (!actions) error(400, 'Actions are required');
+        if (!parsed.success) {
+            console.log(parsed.error.errors);
+            const errors = parsed.error.errors.map((error) => {
+                return { field: error.path[0], message: error.message };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         await prisma.gamePoint.create({
             data: {
-                game: { connect: { id: Number(gameId) } },
-                line: { connect: { id: Number(lineId) } },
-                startTime: Number(startTime),
-                endTime: Number(endTime),
-                offenseDefense: String(offenseDefense),
+                game: { connect: { id: parsed.data.gameId } },
+                line: { connect: { id: parsed.data.lineId } },
+                startTime: parsed.data.startTime,
+                endTime: parsed.data.endTime,
+                offenseDefense: parsed.data.offenseDefense,
                 players: {
-                    connect: players.map((num) => ({ id: Number(num) })),
+                    connect: parsed.data.players.map((num) => ({ id: num })),
                 },
                 actions: {
-                    create: actions.map((action) => ({
+                    create: parsed.data.actions.map((action) => ({
                         type: { connect: { id: action.typeId } },
-                        time: Number(action.time),
-                        notes: { connect: action.notes.map((note) => ({ id: Number(note) })) },
+                        time: action.time,
+                        notes: { connect: action.notes.map((note) => ({ id: note })) },
                         comment: action.comment,
-                        primaryPlayer: action.primaryPlayer
-                            ? { connect: { id: Number(action.primaryPlayer) } }
-                            : undefined,
-                        secondaryPlayer: action.secondaryPlayer
-                            ? { connect: { id: Number(action.secondaryPlayer) } }
-                            : undefined,
+                        primaryPlayer:
+                            action.primaryPlayerId !== null ? { connect: { id: action.primaryPlayerId } } : undefined,
+                        secondaryPlayer:
+                            action.secondaryPlayerId !== null
+                                ? { connect: { id: action.secondaryPlayerId } }
+                                : undefined,
                     })),
                 },
             },
@@ -98,12 +122,17 @@ export const actions = {
     },
     deletePoint: async ({ request }) => {
         const data = await request.formData();
-        let pointId = data.get('pointId');
+        const parsed = deletePointSchema.safeParse(Object.fromEntries(data));
 
-        if (!pointId) error(400, 'Point ID is required');
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return { field: error.path[0], message: error.message };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         await prisma.gamePoint.delete({
-            where: { id: Number(pointId) },
+            where: { id: parsed.data.pointId },
         });
     },
 } satisfies Actions;

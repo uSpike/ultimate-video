@@ -6,7 +6,7 @@
     export let points: PageData['points'];
 
     let eventElements: Array<HTMLDivElement> = [];
-    const eventColors = {
+    const eventColors: { [key: string]: string } = {
         Started: '#0ff',
         Completion: '#0fa',
         Turnover: 'red',
@@ -44,7 +44,7 @@
 
     $: scrollToCurrentEvent(currentTime);
 
-    function shortName(name: string | null) {
+    function shortName(name: string | undefined) {
         if (!name) return '';
         let parts = name.split(' ');
         return `${parts[0]} ${parts[1][0]}`;
@@ -69,17 +69,17 @@
                         {#if action.type.type == 'Started'}
                             Start point
                         {:else if action.type.type == 'Completion'}
-                            Completion: {shortName(action.primaryPlayer.name)} - {shortName(
-                                action.secondaryPlayer.name,
+                            Completion: {shortName(action.primaryPlayer?.name)} - {shortName(
+                                action.secondaryPlayer?.name,
                             )}
                         {:else if action.type.type == 'Turnover'}
-                            Turnover: {shortName(action.primaryPlayer.name)}
+                            Turnover: {shortName(action.primaryPlayer?.name)}
                         {:else if action.type.type == 'Defended'}
                             Defended: {shortName(action.primaryPlayer?.name)}
                         {:else if action.type.type == 'Conceded'}
                             Conceded
                         {:else if action.type.type == 'Goal'}
-                            Goal: {shortName(action.primaryPlayer.name)} - {shortName(action.secondaryPlayer.name)}
+                            Goal: {shortName(action.primaryPlayer?.name)} - {shortName(action.secondaryPlayer?.name)}
                         {/if}
                     </span>
                 </div>

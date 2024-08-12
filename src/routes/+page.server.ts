@@ -1,6 +1,9 @@
 import { handlePrismaError } from '$lib/prisma';
+import { fail } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
+import { zfd } from 'zod-form-data';
+import { z } from 'zod';
 
 export const load: PageServerLoad = async () => {
     const data = {
@@ -10,32 +13,80 @@ export const load: PageServerLoad = async () => {
             },
         }),
     };
-    console.log(data);
     return data;
 };
+
+const addActionSchema = zfd.formData({
+    type: zfd.text(),
+    description: zfd.text(),
+    requirePrimaryPlayer: zfd.text(z.enum(['true', 'false', 'optional'])),
+    requireSecondaryPlayer: zfd.text(z.enum(['true', 'false', 'optional'])),
+    primaryPlayerLabel: zfd.text(z.string().optional()),
+    secondaryPlayerLabel: zfd.text(z.string().optional()),
+    requireState: zfd.text(z.enum(['offense', 'defense', 'any'])),
+});
+
+const removeActionSchema = zfd.formData({
+    id: zfd.numeric(z.number().min(0)),
+});
+
+const addActionNoteSchema = zfd.formData({
+    name: zfd.text(),
+    description: zfd.text(),
+    typeId: zfd.numeric(z.number().min(0)),
+});
+
+const removeActionNoteSchema = zfd.formData({
+    id: zfd.numeric(z.number().min(0)),
+});
 
 export const actions = {
     addActionType: async ({ request }) => {
         const data = await request.formData();
-
-        let type = data.get('type');
-        let description = data.get('description');
-        let requirePrimaryPlayer = data.get('requirePrimaryPlayer');
-        let requireSecondaryPlayer = data.get('requireSecondaryPlayer');
-        let primaryPlayerLabel = data.get('primaryPlayerLabel');
-        let secondaryPlayerLabel = data.get('secondaryPlayerLabel');
-        let requireState = data.get('requireState');
+        const parsed = addActionSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.gamePointActionType.create({
                 data: {
-                    type: String(type),
-                    description: String(description),
-                    requirePrimaryPlayer: String(requirePrimaryPlayer),
-                    requireSecondaryPlayer: String(requireSecondaryPlayer),
-                    primaryPlayerLabel: String(primaryPlayerLabel),
-                    secondaryPlayerLabel: String(secondaryPlayerLabel),
-                    requireState: String(requireState),
+                    type: parsed.data.type,
+                    description: parsed.data.description,
+                    requirePrimaryPlayer: parsed.data.requirePrimaryPlayer,
+                    requireSecondaryPlayer: parsed.data.requireSecondaryPlayer,
+                    primaryPlayerLabel: parsed.data.primaryPlayerLabel,
+                    secondaryPlayerLabel: parsed.data.secondaryPlayerLabel,
+                    requireState: parsed.data.requireState,
+                },
+            });
+        } catch (e) {
+            handlePrismaError(e);
+        }
+    },
+    removeActionType: async ({ request }) => {
+        const data = await request.formData();
+        const parsed = removeActionSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
+
+        try {
+            await prisma.gamePointActionType.delete({
+                where: {
+                    id: parsed.data.id,
                 },
             });
         } catch (e) {
@@ -44,17 +95,46 @@ export const actions = {
     },
     addActionNoteType: async ({ request }) => {
         const data = await request.formData();
-
-        let name = data.get('name');
-        let description = data.get('description');
-        let typeId = data.get('typeId');
+        const parsed = addActionNoteSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.gamePointActionNoteType.create({
                 data: {
-                    name: String(name),
-                    description: String(description),
-                    type: { connect: { id: Number(typeId) } },
+                    name: parsed.data.name,
+                    description: parsed.data.description,
+                    type: { connect: { id: parsed.data.typeId } },
+                },
+            });
+        } catch (e) {
+            handlePrismaError(e);
+        }
+    },
+    removeActionNoteType: async ({ request }) => {
+        const data = await request.formData();
+        const parsed = removeActionNoteSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
+
+        try {
+            await prisma.gamePointActionNoteType.delete({
+                where: {
+                    id: parsed.data.id,
                 },
             });
         } catch (e) {

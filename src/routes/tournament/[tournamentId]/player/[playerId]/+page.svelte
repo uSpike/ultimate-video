@@ -13,9 +13,9 @@
     }
 
     let filterThrows = (action: Action) =>
-        action.type.type == 'Completion' && action.primaryPlayer.id == data.player.id;
+        action.type.type == 'Completion' && action.primaryPlayer?.id == data.player.id;
     let filterCatches = (action: Action) =>
-        action.type.type == 'Completion' && action.secondaryPlayer.id == data.player.id;
+        action.type.type == 'Completion' && action.secondaryPlayer?.id == data.player.id;
     let filterDrops = (action: Action) => action.type.type == 'Drop' && action.primaryPlayer?.id == data.player.id;
     let filterTurnovers = (action: Action) =>
         action.type.type == 'Turnover' && action.primaryPlayer?.id == data.player.id;
@@ -63,32 +63,32 @@
                 <ul>
                     {#each point.actions as action}
                         {#if action.type.type == 'Completion'}
-                            {#if data.player.id == action.primaryPlayer.id}
+                            {#if data.player.id == action.primaryPlayer?.id}
                                 <li>
                                     <a href="../game/{game.id}?time={action.time - 5}"
-                                        >Completion to {action.secondaryPlayer.name}</a
+                                        >Completion to {action.secondaryPlayer?.name}</a
                                     >
                                 </li>
                             {:else}
                                 <li>
                                     <a href="../game/{game.id}?time={action.time - 5}"
-                                        >Completion from {action.primaryPlayer.name}</a
+                                        >Completion from {action.primaryPlayer?.name}</a
                                     >
                                 </li>
                             {/if}
                         {:else if action.type.type == 'Turnover'}
                             <li><mark><a href="../game/{game.id}?time={action.time - 5}">Turnover</a></mark></li>
                         {:else if action.type.type == 'Goal'}
-                            {#if data.player.id == action.primaryPlayer.id}
+                            {#if data.player.id == action.primaryPlayer?.id}
                                 <li>
                                     <a href="../game/{game.id}?time={action.time - 5}"
-                                        >Goal from {action.secondaryPlayer.name}</a
+                                        >Goal from {action.secondaryPlayer?.name}</a
                                     >
                                 </li>
                             {:else}
                                 <li>
                                     <a href="../game/{game.id}?time={action.time - 5}"
-                                        >Assist to {action.primaryPlayer.name}</a
+                                        >Assist to {action.primaryPlayer?.name}</a
                                     >
                                 </li>
                             {/if}

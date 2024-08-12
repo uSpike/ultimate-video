@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { PageData } from './$types';
-    import type { QueuedPoint } from './PointAction.svelte';
+    import { QueuedPoint } from './queuedPoint';
 
     export let currentTime: number;
     export let duration: number;
@@ -10,16 +10,16 @@
 
     export let queuedPoint: QueuedPoint;
 
-    function seekVideo(event) {
+    function seekVideo(event: any) {
         // don't allow seeking during editing
-        if (queuedPoint) return;
+        if (queuedPoint.started) return;
 
         let x = event.offsetX;
         if (event.target !== event.currentTarget) {
             // Calculate the position relative to the slider container
-            x += event.target.offsetLeft;
+            x += event.target?.offsetLeft;
         }
-        video.currentTime = (x / event.currentTarget.clientWidth) * duration;
+        video.currentTime = (x / event.currentTarget?.clientWidth) * duration;
     }
 </script>
 
@@ -48,7 +48,7 @@
             ></div>
         {/each}
     {/each}
-    {#if queuedPoint}
+    {#if queuedPoint.started}
         <div
             class="point-queued"
             style="left: {(queuedPoint.startTime / duration) * 100}%; width: {((currentTime - queuedPoint.startTime) /

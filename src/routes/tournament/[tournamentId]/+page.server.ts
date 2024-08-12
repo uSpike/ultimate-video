@@ -1,19 +1,12 @@
-import { error, redirect } from '@sveltejs/kit';
+import { fail, error, redirect } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
-import { Prisma } from '@prisma/client';
+import { handlePrismaError } from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
-
-function handlePrismaError(e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        error(400, e.message);
-    } else {
-        error(400, 'Unknown error');
-    }
-}
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
 
 export const load: PageServerLoad = async ({ params }) => {
-    console.log(params);
-    let tournament = await prisma.tournament.findUnique({
+    let tournament = await prisma.tournament.findUniqueOrThrow({
         where: { id: Number(params.tournamentId) },
         include: { players: true, lines: true },
     });
@@ -50,60 +43,111 @@ export const load: PageServerLoad = async ({ params }) => {
     return data;
 };
 
-/** @type {import('./$types').Actions} */
+const addGameSchema = zfd.formData({
+    opponent: zfd.text(),
+    date: z.date(),
+    tournamentId: zfd.numeric(z.number().min(0)),
+    videoFile: zfd.text(),
+});
+
+const addLineSchema = zfd.formData({
+    name: zfd.text(),
+    tournamentId: zfd.numeric(z.number().min(0)),
+});
+
+const addPlayerToLineSchema = zfd.formData({
+    lineId: zfd.numeric(z.number().min(0)),
+    playerId: zfd.numeric(z.number().min(0)),
+});
+
+const removePlayerFromLineSchema = zfd.formData({
+    lineId: zfd.numeric(z.number().min(0)),
+    playerId: zfd.numeric(z.number().min(0)),
+});
+
+const newPlayerSchema = zfd.formData({
+    name: zfd.text(),
+    tournamentId: zfd.numeric(z.number().min(0)),
+    genderMatch: z.enum(['mmp', 'fmp']),
+});
+
+const addPlayerSchema = zfd.formData({
+    tournamentId: zfd.numeric(z.number().min(0)),
+    playerId: zfd.numeric(z.number().min(0)),
+});
+
 export const actions = {
     addGame: async ({ request }) => {
         const data = await request.formData();
-
-        let opponent = data.get('opponent');
-        let date = data.get('date');
-        let tournamentId = data.get('tournamentId');
-        let videoFile = data.get('videoFile');
+        const parsed = addGameSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.game.create({
                 data: {
-                    opponent: String(opponent),
-                    date: new Date(String(date)),
-                    tournament: { connect: { id: Number(tournamentId) } },
-                    videoFile: String(videoFile),
+                    opponent: parsed.data.opponent,
+                    date: parsed.data.date,
+                    tournament: { connect: { id: parsed.data.tournamentId } },
+                    videoFile: parsed.data.videoFile,
                 },
             });
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${tournamentId}`);
+        throw redirect(303, `/tournament/${parsed.data.tournamentId}`);
     },
     addLine: async ({ request }) => {
         const data = await request.formData();
-
-        let name = data.get('name');
-        let tournamentId = data.get('tournamentId');
+        const parsed = addLineSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.playerLine.create({
                 data: {
                     name: String(name),
-                    tournament: { connect: { id: Number(tournamentId) } },
+                    tournament: { connect: { id: parsed.data.tournamentId } },
                 },
             });
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${tournamentId}`);
+        throw redirect(303, `/tournament/${parsed.data.tournamentId}`);
     },
     addPlayerToLine: async ({ request }) => {
         const data = await request.formData();
-
-        let lineId = data.get('lineId');
-        let playerId = data.get('playerId');
+        const parsed = addPlayerToLineSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.playerLine.update({
-                where: { id: Number(lineId) },
+                where: { id: parsed.data.lineId },
                 data: {
                     primaryPlayers: {
-                        connect: { id: Number(playerId) },
+                        connect: { id: parsed.data.playerId },
                     },
                 },
             });
@@ -113,16 +157,23 @@ export const actions = {
     },
     removePlayerFromLine: async ({ request }) => {
         const data = await request.formData();
-
-        let lineId = data.get('lineId');
-        let playerId = data.get('playerId');
+        const parsed = removePlayerFromLineSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.playerLine.update({
-                where: { id: Number(lineId) },
+                where: { id: parsed.data.lineId },
                 data: {
                     primaryPlayers: {
-                        disconnect: { id: Number(playerId) },
+                        disconnect: { id: parsed.data.playerId },
                     },
                 },
             });
@@ -132,39 +183,51 @@ export const actions = {
         throw redirect(303, `/tournament/${data.get('tournamentId')}`);
     },
     newPlayer: async ({ request }) => {
-        // create new player
         const data = await request.formData();
-
-        let name = data.get('name');
-        let tournamentId = data.get('tournamentId');
-        let genderMatch = data.get('genderMatch');
+        const parsed = newPlayerSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.player.create({
                 data: {
                     name: String(name),
-                    tournaments: { connect: { id: Number(tournamentId) } },
-                    genderMatch: String(genderMatch),
+                    tournaments: { connect: { id: parsed.data.tournamentId } },
+                    genderMatch: parsed.data.genderMatch,
                 },
             });
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${tournamentId}`);
+        throw redirect(303, `/tournament/${parsed.data.tournamentId}`);
     },
     addPlayer: async ({ request }) => {
         // connect player to tournament
         const data = await request.formData();
-
-        let tournamentId = data.get('tournamentId');
-        let playerId = data.get('playerId');
+        const parsed = addPlayerSchema.safeParse(data);
+        if (!parsed.success) {
+            const errors = parsed.error.errors.map((error) => {
+                return {
+                    field: error.path[0],
+                    message: error.message,
+                };
+            });
+            return fail(400, { error: true, errors });
+        }
 
         try {
             await prisma.player.update({
-                where: { id: Number(playerId) },
+                where: { id: parsed.data.playerId },
                 data: {
                     tournaments: {
-                        connect: { id: Number(tournamentId) },
+                        connect: { id: parsed.data.tournamentId },
                     },
                 },
             });

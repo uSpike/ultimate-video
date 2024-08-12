@@ -50,7 +50,7 @@
         }
     }
 
-    let playerStats: { [key: number]: ReturnType<typeof calculateStats> } = data.tournament.players.reduce(
+    let playerStats = data.tournament.players.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>(
         (acc, player) => {
             acc[player.id] = calculateStats(data.games, null, null, player.id);
             return acc;
