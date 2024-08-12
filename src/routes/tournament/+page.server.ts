@@ -1,6 +1,9 @@
 import { handlePrismaError } from '$lib/prisma';
 import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
+import { zfd } from 'zod-form-data';
+import { z } from 'zod';
+import { handleZodError } from '$lib/zod';
 
 export const load: PageServerLoad = async () => {
     const data = {
@@ -9,16 +12,24 @@ export const load: PageServerLoad = async () => {
     return data;
 };
 
+const addTournamentSchema = zfd.formData({
+    name: zfd.text(),
+});
+
+const removeTournamentSchema = zfd.formData({
+    tournamentId: zfd.numeric(z.number().min(0)),
+});
+
 export const actions = {
     addTournament: async ({ request }) => {
         const data = await request.formData();
-
-        let name = data.get('name');
+        const parsed = addTournamentSchema.safeParse(data);
+        handleZodError(parsed);
 
         try {
             await prisma.tournament.create({
                 data: {
-                    name: String(name),
+                    name: parsed.data.name,
                 },
             });
         } catch (e) {
@@ -27,13 +38,13 @@ export const actions = {
     },
     deleteTournament: async ({ request }) => {
         const data = await request.formData();
-
-        let id = data.get('tournamentId');
+        const parsed = removeTournamentSchema.safeParse(data);
+        handleZodError(parsed);
 
         try {
             await prisma.tournament.delete({
                 where: {
-                    id: Number(id),
+                    id: parsed.data.tournamentId,
                 },
             });
         } catch (e) {

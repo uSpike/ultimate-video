@@ -1,6 +1,7 @@
 import { handlePrismaError } from '$lib/prisma';
-import { fail } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
+import { handleZodError } from '$lib/zod';
 import type { Actions, PageServerLoad } from './$types';
 import { zfd } from 'zod-form-data';
 import { z } from 'zod';
@@ -44,15 +45,7 @@ export const actions = {
     addActionType: async ({ request }) => {
         const data = await request.formData();
         const parsed = addActionSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.gamePointActionType.create({
@@ -73,15 +66,7 @@ export const actions = {
     removeActionType: async ({ request }) => {
         const data = await request.formData();
         const parsed = removeActionSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.gamePointActionType.delete({
@@ -96,15 +81,7 @@ export const actions = {
     addActionNoteType: async ({ request }) => {
         const data = await request.formData();
         const parsed = addActionNoteSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.gamePointActionNoteType.create({
@@ -121,15 +98,7 @@ export const actions = {
     removeActionNoteType: async ({ request }) => {
         const data = await request.formData();
         const parsed = removeActionNoteSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.gamePointActionNoteType.delete({

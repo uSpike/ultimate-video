@@ -3,6 +3,7 @@ import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
+import { handleZodError } from '$lib/zod';
 
 export const load: PageServerLoad = async ({ params }) => {
     const data = {
@@ -84,14 +85,7 @@ export const actions = {
     submitPoint: async ({ request }) => {
         const data = await request.formData();
         const parsed = submitPointSchema.safeParse(data);
-
-        if (!parsed.success) {
-            console.log(parsed.error.errors);
-            const errors = parsed.error.errors.map((error) => {
-                return { field: error.path[0], message: error.message };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         await prisma.gamePoint.create({
             data: {
@@ -123,13 +117,7 @@ export const actions = {
     deletePoint: async ({ request }) => {
         const data = await request.formData();
         const parsed = deletePointSchema.safeParse(Object.fromEntries(data));
-
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return { field: error.path[0], message: error.message };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         await prisma.gamePoint.delete({
             where: { id: parsed.data.pointId },

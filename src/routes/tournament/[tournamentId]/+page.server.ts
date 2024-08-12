@@ -4,6 +4,7 @@ import { handlePrismaError } from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
+import { handleZodError } from '$lib/zod';
 
 export const load: PageServerLoad = async ({ params }) => {
     let tournament = await prisma.tournament.findUniqueOrThrow({
@@ -80,15 +81,7 @@ export const actions = {
     addGame: async ({ request }) => {
         const data = await request.formData();
         const parsed = addGameSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.game.create({
@@ -107,20 +100,12 @@ export const actions = {
     addLine: async ({ request }) => {
         const data = await request.formData();
         const parsed = addLineSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.playerLine.create({
                 data: {
-                    name: String(name),
+                    name: parsed.data.name,
                     tournament: { connect: { id: parsed.data.tournamentId } },
                 },
             });
@@ -132,15 +117,7 @@ export const actions = {
     addPlayerToLine: async ({ request }) => {
         const data = await request.formData();
         const parsed = addPlayerToLineSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.playerLine.update({
@@ -158,15 +135,7 @@ export const actions = {
     removePlayerFromLine: async ({ request }) => {
         const data = await request.formData();
         const parsed = removePlayerFromLineSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.playerLine.update({
@@ -185,20 +154,12 @@ export const actions = {
     newPlayer: async ({ request }) => {
         const data = await request.formData();
         const parsed = newPlayerSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.player.create({
                 data: {
-                    name: String(name),
+                    name: parsed.data.name,
                     tournaments: { connect: { id: parsed.data.tournamentId } },
                     genderMatch: parsed.data.genderMatch,
                 },
@@ -212,15 +173,7 @@ export const actions = {
         // connect player to tournament
         const data = await request.formData();
         const parsed = addPlayerSchema.safeParse(data);
-        if (!parsed.success) {
-            const errors = parsed.error.errors.map((error) => {
-                return {
-                    field: error.path[0],
-                    message: error.message,
-                };
-            });
-            return fail(400, { error: true, errors });
-        }
+        handleZodError(parsed);
 
         try {
             await prisma.player.update({
