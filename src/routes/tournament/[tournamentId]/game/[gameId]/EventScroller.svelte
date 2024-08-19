@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { PageData } from './$types';
 
-    export let currentTime: number;
+    export let currentTime: number = 0;
     export let video: HTMLVideoElement;
     export let points: PageData['points'];
 
@@ -18,7 +18,6 @@
     let activeElementIndex = 0;
 
     function scrollToCurrentEvent(time: number) {
-        if (points.length === 0) return;
         for (let point of points) {
             for (let i = 1; i < points.length; i++) {
                 let action = point.actions[i];

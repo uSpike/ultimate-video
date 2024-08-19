@@ -8,6 +8,42 @@
 
     export let data;
 
+    import { onMount } from 'svelte';
+    import {io, Socket} from 'socket.io-client';
+
+    let status = 'disconnected';
+    let socket: Socket;
+
+    function calculateLatLong(alpha: number, beta: number, gamma: number) {
+        // In landscape, beta becomes more analogous to longitude and gamma to latitude
+        latitude = Math.max(-85, Math.min(85, 180-gamma)); // Use gamma for latitude-like tilt
+        longitude = ((alpha % 360) - 180) / 2; // Adjust alpha for consistent longitude range
+        longitude = Math.max(-85, Math.min(85, longitude));
+
+        // The gamma value can be used to adjust the latitude if you want to incorporate tilt around the y-axis.
+        // Adjusting latitude with gamma if needed:
+        //latitude += gamma / 2; // Adjust scaling factor as necessary
+        //latitude = Math.max(-85, Math.min(85, latitude));
+
+}
+
+    onMount(() => {
+        socket = io(
+            `ws${location.origin.slice(4)}/orientation`,
+            {extraHeaders: {id: "1", listen: "true"}},
+        );
+        socket.on('connect', () => {
+            status = 'connected';
+        });
+        socket.on('disconnect', () => {
+            status = 'disconnected';
+        });
+        socket.on('orientation', (data) => {
+            calculateLatLong(data.alpha, data.beta, data.gamma);
+            perspectiveMoved = true;
+        });
+    });
+
     let video: HTMLVideoElement;
     let videoPlaying = false;
     let perspectiveMode = false;
@@ -77,7 +113,6 @@
     let originalLongitude = 0;
 
     let mouseDown = false;
-    let mouseMoved = false;
     let mouseX = 0;
     let mouseY = 0;
 
@@ -209,7 +244,6 @@
             return;
         }
         mouseDown = true;
-        mouseMoved = false;
 
         mouseX = event.clientX;
         mouseY = event.clientY;
@@ -222,7 +256,6 @@
         if (!mouseDown) {
             return;
         }
-        mouseMoved = true;
         perspectiveMoved = true;
         longitude = (mouseX - event.clientX) * 0.1 + originalLongitude;
         latitude = (mouseY - event.clientY) * 0.1 + originalLatitude;
@@ -276,6 +309,8 @@
 </script>
 
 <svelte:window on:resize={onWindowResize} on:keypress={onKeypress} />
+
+{status}
 
 <div>
     <!-- style="display: flex; flex-flow:column; height: 100%; width: 100%"> -->

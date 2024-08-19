@@ -36,7 +36,7 @@
                     </li>
                 {/each}
             </ul>
-            Add note type
+
             <form action="?/addActionNoteType" method="POST">
                 <input type="hidden" name="typeId" value={actionType.id} />
                 <input type="text" name="name" placeholder="Name" />
