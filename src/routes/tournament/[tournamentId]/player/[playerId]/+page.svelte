@@ -29,7 +29,11 @@
     let defended = filterActions(data.tournament.games, filterDefended);
 </script>
 
-<h1>{data.player.name} at {data.tournament.name}</h1>
+<a href="/">Home</a> &gt;
+<a href="/tournament">Tournaments</a> &gt;
+<a href="/tournament/{data.tournament.id}">{data.tournament.name}</a>
+
+<h1>{data.player.name}</h1>
 
 <h2>Stats</h2>
 

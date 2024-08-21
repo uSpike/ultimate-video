@@ -297,29 +297,22 @@ async function main() {
 
     await prisma.gamePointActionNoteType.create({
         data: {
-            name: 'person',
-            description: 'Person offense',
+            name: 'hex',
+            description: 'Hex offense',
             type: { connect: { id: actionTypes['Offense Set'].id } },
         },
     });
     await prisma.gamePointActionNoteType.create({
         data: {
-            name: 'zone-3-3-1',
-            description: '3-3-1 Zone offense',
+            name: 'horizontal',
+            description: 'horizontal stack offense',
             type: { connect: { id: actionTypes['Offense Set'].id } },
         },
     });
     await prisma.gamePointActionNoteType.create({
         data: {
-            name: 'zone-2-4-1',
-            description: '2-4-1 Zone offense',
-            type: { connect: { id: actionTypes['Offense Set'].id } },
-        },
-    });
-    await prisma.gamePointActionNoteType.create({
-        data: {
-            name: 'zone-2-3-2',
-            description: '2-3-2 Zone offense',
+            name: 'vertical',
+            description: 'Vertical stack offense',
             type: { connect: { id: actionTypes['Offense Set'].id } },
         },
     });
@@ -401,13 +394,6 @@ async function main() {
         data: {
             name: 'Swiss 2024',
             players: {},
-        },
-    });
-
-    prisma.playerLine.create({
-        data: {
-            name: 'Swiss test',
-            tournamentId: swiss_tournament.id,
         },
     });
 
@@ -546,6 +532,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Zach Hallum'] } },
             secondaryPlayer: { connect: { id: players['Maggie Lincoln'] } },
             notes: { connect: { id: await getNoteId('skinny', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
     await prisma.gamePointAction.create({
@@ -563,6 +550,7 @@ async function main() {
             type: { connect: { id: actionTypes['Conceded'].id } },
             point: { connect: { id: g1p1.id } },
             notes: { connect: { id: await getNoteId('endzone', 'Conceded') } },
+            offenseDefense: 'Defense',
         },
     });
 
@@ -602,6 +590,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Luke Bodnar'] } },
             secondaryPlayer: { connect: { id: players['Lionel Wu'] } },
             notes: { connect: { id: await getNoteId('skinny', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
 
@@ -613,6 +602,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Lionel Wu'] } },
             secondaryPlayer: { connect: { id: players['Kaylin Weber'] } },
             notes: { connect: { id: await getNoteId('under', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
 
@@ -624,6 +614,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Kaylin Weber'] } },
             secondaryPlayer: { connect: { id: players['Andrew Taber'] } },
             notes: { connect: { id: await getNoteId('huck', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
 
@@ -655,6 +646,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Lionel Wu'] } },
             secondaryPlayer: { connect: { id: players['Luke Bodnar'] } },
             notes: { connect: { id: await getNoteId('skinny', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
 
@@ -666,6 +658,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Luke Bodnar'] } },
             secondaryPlayer: { connect: { id: players['Abby Seltzer'] } },
             notes: { connect: { id: await getNoteId('huck', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
 
@@ -677,6 +670,7 @@ async function main() {
             primaryPlayer: { connect: { id: players['Abby Seltzer'] } },
             secondaryPlayer: { connect: { id: players['Luke Bodnar'] } },
             notes: { connect: { id: await getNoteId('swing', 'Completion') } },
+            offenseDefense: 'Offense',
         },
     });
 

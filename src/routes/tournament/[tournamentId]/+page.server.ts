@@ -1,4 +1,4 @@
-import { fail, error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import { handlePrismaError } from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
@@ -46,7 +46,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 const addGameSchema = zfd.formData({
     opponent: zfd.text(),
-    date: z.date(),
+    date: zfd.text(z.coerce.date()),
     tournamentId: zfd.numeric(z.number().min(0)),
     videoFile: zfd.text(),
 });
@@ -66,13 +66,12 @@ const removePlayerFromLineSchema = zfd.formData({
     playerId: zfd.numeric(z.number().min(0)),
 });
 
-const newPlayerSchema = zfd.formData({
-    name: zfd.text(),
+const addPlayerSchema = zfd.formData({
     tournamentId: zfd.numeric(z.number().min(0)),
-    genderMatch: z.enum(['mmp', 'fmp']),
+    playerId: zfd.numeric(z.number().min(0)),
 });
 
-const addPlayerSchema = zfd.formData({
+const removePlayerSchema = zfd.formData({
     tournamentId: zfd.numeric(z.number().min(0)),
     playerId: zfd.numeric(z.number().min(0)),
 });
@@ -95,7 +94,6 @@ export const actions = {
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${parsed.data.tournamentId}`);
     },
     addLine: async ({ request }) => {
         const data = await request.formData();
@@ -112,7 +110,6 @@ export const actions = {
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${parsed.data.tournamentId}`);
     },
     addPlayerToLine: async ({ request }) => {
         const data = await request.formData();
@@ -149,25 +146,6 @@ export const actions = {
         } catch (e) {
             handlePrismaError(e);
         }
-        throw redirect(303, `/tournament/${data.get('tournamentId')}`);
-    },
-    newPlayer: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = newPlayerSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
-            await prisma.player.create({
-                data: {
-                    name: parsed.data.name,
-                    tournaments: { connect: { id: parsed.data.tournamentId } },
-                    genderMatch: parsed.data.genderMatch,
-                },
-            });
-        } catch (e) {
-            handlePrismaError(e);
-        }
-        throw redirect(303, `/tournament/${parsed.data.tournamentId}`);
     },
     addPlayer: async ({ request }) => {
         // connect player to tournament
@@ -181,6 +159,25 @@ export const actions = {
                 data: {
                     tournaments: {
                         connect: { id: parsed.data.tournamentId },
+                    },
+                },
+            });
+        } catch (e) {
+            handlePrismaError(e);
+        }
+    },
+    removePlayer: async ({ request }) => {
+        // disconnect player from tournament
+        const data = await request.formData();
+        const parsed = removePlayerSchema.safeParse(data);
+        handleZodError(parsed);
+
+        try {
+            await prisma.player.update({
+                where: { id: parsed.data.playerId },
+                data: {
+                    tournaments: {
+                        disconnect: { id: parsed.data.tournamentId },
                     },
                 },
             });

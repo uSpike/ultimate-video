@@ -20,6 +20,7 @@
         comment: string | null;
         primaryPlayer: Player | null;
         secondaryPlayer: Player | null;
+        offenseDefense: 'Offense' | 'Defense';
     };
 
     function assert(condition: unknown): asserts condition {
@@ -93,6 +94,7 @@
                 comment: selectedComment,
                 primaryPlayer: selectedPrimaryPlayer,
                 secondaryPlayer: selectedSecondaryPlayer,
+                offenseDefense: actionState === 'offense' ? 'Offense' : 'Defense',
             },
         ];
 
@@ -138,6 +140,7 @@
                     time: action.time,
                     notes: action.notes.map((note) => note.id),
                     comment: action.comment,
+                    offenseDefense: action.offenseDefense,
                     primaryPlayerId: action.primaryPlayer?.id,
                     secondaryPlayerId: action.secondaryPlayer?.id,
                 })),

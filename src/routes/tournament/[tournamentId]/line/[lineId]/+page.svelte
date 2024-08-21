@@ -2,6 +2,10 @@
     export let data;
 </script>
 
+<a href="/">Home</a> &gt;
+<a href="/tournament">Tournaments</a> &gt;
+<a href="/tournament/{data.tournament.id}">{data.tournament.name}</a>
+
 <h1>{data.line.name}</h1>
 <span>{data.tournament.name}</span>
 

@@ -1,54 +1,7 @@
 <script lang="ts">
-    import { invalidateAll } from '$app/navigation';
     import { calculateStats } from '$lib/stats.js';
 
     export let data;
-
-    async function addGame(event: SubmitEvent) {
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        await handleFetch(`?/addGame`, formData);
-    }
-
-    async function addLine(event: SubmitEvent) {
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        await handleFetch(`?/addLine`, formData);
-    }
-
-    async function addPlayerToLine(event: SubmitEvent) {
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        await handleFetch(`?/addPlayerToLine`, formData);
-    }
-
-    async function removePlayerFromLine(event: SubmitEvent) {
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        await handleFetch(`?/removePlayerFromLine`, formData);
-    }
-
-    async function addPlayer(event: SubmitEvent) {
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        await handleFetch(`?/addPlayer`, formData);
-    }
-
-    async function newPlayer(event: SubmitEvent) {
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        await handleFetch(`?/newPlayer`, formData);
-    }
-
-    async function handleFetch(url: string, formData: FormData) {
-        let response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (response.ok) {
-            console;
-            invalidateAll();
-            return response.json();
-        } else {
-            let js = await response.json();
-            if (js.error) alert(js.error?.message);
-        }
-    }
 
     let playerStats = data.tournament.players.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>(
         (acc, player) => {
@@ -58,6 +11,9 @@
         {},
     );
 </script>
+
+<a href="/">Home</a> &gt;
+<a href="/tournament">Tournaments</a>
 
 <h1>{data.tournament.name}</h1>
 
@@ -70,7 +26,7 @@
     {/each}
 </ul>
 
-<form method="POST" on:submit|preventDefault={addGame}>
+<form method="POST" action="?/addGame">
     <input type="text" name="opponent" placeholder="Opponent" />
     <input type="date" name="date" placeholder="Date" />
     <input type="text" name="videoFile" placeholder="Video File" />
@@ -78,18 +34,44 @@
     <button type="submit">Add Game</button>
 </form>
 
+<h2>Players</h2>
+<ul>
+    {#each data.players as player}
+        {@const added = !!data.tournament.players.find((p) => p.id === player.id)}
+        <li>
+            <form method="POST">
+                <input type="text" name="playerId" value={player.id} hidden />
+                <input type="text" name="tournamentId" value={data.tournament.id} hidden />
+                {#if added}
+                    <span><b>{player.name}</b></span>
+                {:else}
+                    <span>{player.name}</span>
+                {/if}
+                <button formaction="?/addPlayer" disabled={added}>Add</button>
+                <button formaction="?/removePlayer" disabled={!added}>Remove</button>
+            </form>
+        </li>
+    {/each}
+</ul>
+
 <h2>Lines</h2>
 <ul>
     {#each data.lines as line}
         <li><a href="{data.tournament.id}/line/{line.id}">{line.name}</a></li>
         <ul>
-            {#each line.primaryPlayers as player}
+            {#each data.tournament.players as player}
+                {@const added = !!line.primaryPlayers.find((p) => p.id === player.id)}
                 <li>
-                    <form method="POST" on:submit|preventDefault={removePlayerFromLine}>
+                    <form method="POST">
                         <input type="text" name="lineId" value={line.id} hidden />
                         <input type="text" name="playerId" value={player.id} hidden />
-                        <span>{player.name}</span>
-                        <button type="submit">Remove</button>
+                        {#if added}
+                            <span><b>{player.name}</b></span>
+                        {:else}
+                            <span>{player.name}</span>
+                        {/if}
+                        <button formaction="?/addPlayerToLine" disabled={added}>Add</button>
+                        <button formaction="?/removePlayerFromLine" disabled={!added}>Remove</button>
                     </form>
                 </li>
             {/each}
@@ -97,54 +79,10 @@
     {/each}
 </ul>
 
-<form method="POST" on:submit|preventDefault={addLine}>
+<form method="POST" action="?/addLine">
     <input type="text" name="name" placeholder="Name" />
     <input type="text" name="tournamentId" value={data.tournament.id} hidden />
     <button type="submit">Add Line</button>
-</form>
-
-<form method="POST" on:submit|preventDefault={addPlayerToLine}>
-    <select name="lineId">
-        {#each data.lines as line}
-            <option value={line.id}>{line.name}</option>
-        {/each}
-    </select>
-    <select name="playerId">
-        {#each data.tournament.players as player}
-            <option value={player.id}>{player.name}</option>
-        {/each}
-    </select>
-    <input type="text" name="tournamentId" value={data.tournament.id} hidden />
-    <button type="submit">Add Player</button>
-</form>
-
-<h2>Players</h2>
-<ul>
-    {#each data.tournament.players as player}
-        <li><a href="{data.tournament.id}/player/{player.id}">{player.name}</a></li>
-    {/each}
-</ul>
-
-<form method="POST" on:submit|preventDefault={addPlayer}>
-    <select name="playerId">
-        {#each data.players as player}
-            {#if !data.tournament.players.find((p) => p.id === player.id)}
-                <option value={player.id}>{player.name}</option>
-            {/if}
-        {/each}
-    </select>
-    <input type="text" name="tournamentId" value={data.tournament.id} hidden />
-    <button type="submit">Add Player</button>
-</form>
-
-<form method="POST" on:submit|preventDefault={newPlayer}>
-    <input type="text" name="name" placeholder="Name" />
-    <select name="genderMatch">
-        <option value="fmp">FMP</option>
-        <option value="mmp">MMP</option>
-    </select>
-    <input type="text" name="tournamentId" value={data.tournament.id} hidden />
-    <button type="submit">New Player</button>
 </form>
 
 <h2>Stats</h2>

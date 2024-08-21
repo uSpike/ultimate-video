@@ -73,6 +73,8 @@ model GamePointAction {
   notes GamePointActionNoteType[]
   comment   String?
 
+  offenseDefense String?
+
   point     GamePoint @relation(fields: [pointId], references: [id], onDelete: Cascade)
   pointId   Int
   primaryPlayer    Player? @relation("Player_primaryActions", fields: [primaryPlayerId], references: [id])

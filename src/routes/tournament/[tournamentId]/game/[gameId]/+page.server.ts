@@ -70,6 +70,7 @@ const submitPointSchema = zfd.formData({
                 time: z.number().min(0),
                 notes: z.array(z.number().min(0)),
                 comment: z.string().nullable(),
+                offenseDefense: z.enum(['Offense', 'Defense']),
                 primaryPlayerId: z.number().optional(),
                 secondaryPlayerId: z.number().optional(),
             }),
@@ -103,6 +104,7 @@ export const actions = {
                         time: action.time,
                         notes: { connect: action.notes.map((note) => ({ id: note })) },
                         comment: action.comment,
+                        offenseDefense: action.offenseDefense,
                         primaryPlayer: Number.isInteger(action.primaryPlayerId)
                             ? { connect: { id: action.primaryPlayerId } }
                             : undefined,

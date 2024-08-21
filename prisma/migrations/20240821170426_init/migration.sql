@@ -47,6 +47,7 @@ CREATE TABLE "GamePointAction" (
     "time" INTEGER NOT NULL,
     "typeId" INTEGER NOT NULL,
     "comment" TEXT,
+    "offenseDefense" TEXT,
     "pointId" INTEGER NOT NULL,
     "primaryPlayerId" INTEGER,
     "secondaryPlayerId" INTEGER,
