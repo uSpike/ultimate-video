@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { base } from '$app/paths';
     import ProgressBar from './ProgressBar.svelte';
     import EventScroller from './EventScroller.svelte';
     import PointAction from './PointAction.svelte';
@@ -373,7 +374,7 @@
 
     <ProgressBar bind:video bind:currentTime bind:duration bind:data bind:queuedPoint />
 
-    <a href="/tournament/{data.tournament.id}">{data.tournament.name}</a> |
+    <a href="{base}/tournament/{data.tournament.id}">{data.tournament.name}</a> |
 
     <form style="display:inline">
         <select bind:value={selectedGame} on:change={goToGame}>

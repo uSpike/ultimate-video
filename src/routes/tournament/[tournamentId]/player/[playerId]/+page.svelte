@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { base } from '$app/paths';
     import type { PageData } from './$types';
     export let data;
 
@@ -29,9 +30,9 @@
     let defended = filterActions(data.tournament.games, filterDefended);
 </script>
 
-<a href="/">Home</a> &gt;
-<a href="/tournament">Tournaments</a> &gt;
-<a href="/tournament/{data.tournament.id}">{data.tournament.name}</a>
+<a href="{base}/">Home</a> &gt;
+<a href="{base}/tournament">Tournaments</a> &gt;
+<a href="{base}/tournament/{data.tournament.id}">{data.tournament.name}</a>
 
 <h1>{data.player.name}</h1>
 
@@ -48,7 +49,7 @@
 <h2>Games</h2>
 
 {#each data.tournament.games as game}
-    <h3><a href="/tournament/{data.tournament.id}/game/{game.id}">{game.opponent}</a></h3>
+    <h3><a href="{base}/tournament/{data.tournament.id}/game/{game.id}">{game.opponent}</a></h3>
     <h4>Stats</h4>
     <ul>
         <li>Completed throws: {filterActions([game], filterThrows).length}</li>

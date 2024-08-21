@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { base } from '$app/paths';
+
     export let data;
 
     import { calculateStats } from '$lib/stats.js';
@@ -9,7 +11,7 @@
     }, {});
 </script>
 
-<a href="/">Home</a>
+<a href="{base}/">Home</a>
 
 <h1>Tournaments</h1>
 
@@ -18,7 +20,7 @@
         <li>
             <form method="POST" action="?/deleteTournament">
                 <input type="text" name="tournamentId" value={tournament.id} hidden />
-                <a href="tournament/{tournament.id}">{tournament.name}</a>
+                <a href="{base}/tournament/{tournament.id}">{tournament.name}</a>
                 <button type="submit">Remove</button>
             </form>
         </li>

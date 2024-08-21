@@ -1,10 +1,12 @@
 <script lang="ts">
+    import { base } from '$app/paths';
+
     export let data;
 </script>
 
-<a href="/">Home</a> &gt;
-<a href="/tournament">Tournaments</a> &gt;
-<a href="/tournament/{data.tournament.id}">{data.tournament.name}</a>
+<a href="{base}/">Home</a> &gt;
+<a href="{base}/tournament">Tournaments</a> &gt;
+<a href="{base}/tournament/{data.tournament.id}">{data.tournament.name}</a>
 
 <h1>{data.line.name}</h1>
 <span>{data.tournament.name}</span>

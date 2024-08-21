@@ -1,9 +1,11 @@
 <script lang="ts">
+    import { base } from '$app/paths';
+
     export let data;
 </script>
 
-<h1><a href="tournament">Tournaments</a></h1>
-<h1><a href="action">Actions</a></h1>
+<h1><a href="{base}/tournament">Tournaments</a></h1>
+<h1><a href="{base}/action">Actions</a></h1>
 
 <h1>Roster</h1>
 

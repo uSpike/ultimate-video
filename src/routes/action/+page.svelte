@@ -1,11 +1,13 @@
 <script lang="ts">
+    import { base } from '$app/paths';
+
     export let data;
 
     let requirePrimaryPlayer: string = 'false';
     let requireSecondaryPlayer: string = 'false';
 </script>
 
-<a href="/">Home</a>
+<a href="{base}/">Home</a>
 
 <h1>Actions</h1>
 {#each data.actionTypes as actionType}

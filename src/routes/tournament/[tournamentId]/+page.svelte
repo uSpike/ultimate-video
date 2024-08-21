@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { base } from '$app/paths';
     import { calculateStats } from '$lib/stats.js';
 
     export let data;
@@ -12,8 +13,8 @@
     );
 </script>
 
-<a href="/">Home</a> &gt;
-<a href="/tournament">Tournaments</a>
+<a href="{base}/">Home</a> &gt;
+<a href="{base}/tournament">Tournaments</a>
 
 <h1>{data.tournament.name}</h1>
 
@@ -21,7 +22,7 @@
 <ul>
     {#each data.games as game}
         <li>
-            <a href="{data.tournament.id}/game/{game.id}">{game.opponent}</a>
+            <a href="{base}/tournament/{data.tournament.id}/game/{game.id}">{game.opponent}</a>
         </li>
     {/each}
 </ul>
@@ -57,7 +58,7 @@
 <h2>Lines</h2>
 <ul>
     {#each data.lines as line}
-        <li><a href="{data.tournament.id}/line/{line.id}">{line.name}</a></li>
+        <li><a href="{base}/tournament}/{data.tournament.id}/line/{line.id}">{line.name}</a></li>
         <ul>
             {#each data.tournament.players as player}
                 {@const added = !!line.primaryPlayers.find((p) => p.id === player.id)}
