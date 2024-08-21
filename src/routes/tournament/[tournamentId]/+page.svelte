@@ -81,4 +81,6 @@
 
 <h2>Stats</h2>
 
-<StatTable games={data.games} players={data.tournament.players} lines={data.lines} />
+{#if data.games.length > 0}
+    <StatTable games={data.games} players={data.tournament.players} lines={data.lines} />
+{/if}

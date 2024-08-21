@@ -29,4 +29,6 @@
 </form>
 
 <h2>Stats</h2>
-<StatTable games={data.games} players={data.players} lines={data.tournaments.flatMap((t) => t.lines)} />
+{#if data.games.length > 0}
+    <StatTable games={data.games} players={data.players} lines={data.tournaments.flatMap((t) => t.lines)} />
+{/if}

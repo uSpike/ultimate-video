@@ -1,7 +1,7 @@
 <script lang="ts">
     import StatTableRow from './statTableRow.svelte';
 
-    import { getPlayerStats, getLineStats, getGenderStats } from '$lib/stats.ts';
+    import { getPlayerStats, getLineStats, getGenderStats } from '$lib/stats.js';
     import type { Game, Player, Line } from '$lib/stats.ts';
 
     export let games: Game[];
