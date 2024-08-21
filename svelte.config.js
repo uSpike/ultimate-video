@@ -5,7 +5,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
     kit: {
         adapter: adapter(),
-        paths: {base: '/ultimate-video'},
+        paths: { base: '/ultimate-video' },
     },
     preprocess: vitePreprocess(),
 };
