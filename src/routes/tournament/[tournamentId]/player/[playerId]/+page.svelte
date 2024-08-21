@@ -70,35 +70,50 @@
                         {#if action.type.type == 'Completion'}
                             {#if data.player.id == action.primaryPlayer?.id}
                                 <li>
-                                    <a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}"
-                                        >Completion to {action.secondaryPlayer?.name}</a
+                                    <a
+                                        href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time -
+                                            5}">Completion to {action.secondaryPlayer?.name}</a
                                     >
                                 </li>
                             {:else}
                                 <li>
-                                    <a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}"
-                                        >Completion from {action.primaryPlayer?.name}</a
+                                    <a
+                                        href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time -
+                                            5}">Completion from {action.primaryPlayer?.name}</a
                                     >
                                 </li>
                             {/if}
                         {:else if action.type.type == 'Turnover'}
-                            <li><mark><a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}">Turnover</a></mark></li>
+                            <li>
+                                <mark
+                                    ><a
+                                        href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time -
+                                            5}">Turnover</a
+                                    ></mark
+                                >
+                            </li>
                         {:else if action.type.type == 'Goal'}
                             {#if data.player.id == action.primaryPlayer?.id}
                                 <li>
-                                    <a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}"
-                                        >Goal from {action.secondaryPlayer?.name}</a
+                                    <a
+                                        href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time -
+                                            5}">Goal from {action.secondaryPlayer?.name}</a
                                     >
                                 </li>
                             {:else}
                                 <li>
-                                    <a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}"
-                                        >Assist to {action.primaryPlayer?.name}</a
+                                    <a
+                                        href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time -
+                                            5}">Assist to {action.primaryPlayer?.name}</a
                                     >
                                 </li>
                             {/if}
                         {:else if action.type.type == 'Defended'}
-                            <li><a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}">Defended</a></li>
+                            <li>
+                                <a href="{base}/tournament/{data.tournament.id}/game/{game.id}?time={action.time - 5}"
+                                    >Defended</a
+                                >
+                            </li>
                         {/if}
                     {/each}
                 </ul>

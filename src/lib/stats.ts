@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-type Game = Prisma.GameGetPayload<{
+export type Game = Prisma.GameGetPayload<{
     include: {
         points: {
             include: {
@@ -15,6 +15,12 @@ type Game = Prisma.GameGetPayload<{
     };
 }>;
 
+export type Player = Prisma.PlayerGetPayload<{}>;
+export type Line = Prisma.PlayerLineGetPayload<{
+    include: {
+        primaryPlayers: true;
+    };
+}>;
 
 export const sumObjectsByKey = (...objs: any[]) => {
     const res = objs.reduce((a, b) => {
@@ -26,7 +32,7 @@ export const sumObjectsByKey = (...objs: any[]) => {
         return a;
     }, {});
     return res;
-}
+};
 
 export function calculateStats(games: Array<Game>, gameId: Number | null, lineId: Number | null, playerId: Number) {
     let stats = {
@@ -118,4 +124,29 @@ export function calculateStats(games: Array<Game>, gameId: Number | null, lineId
         }
     }
     return stats;
+}
+
+export function getPlayerStats(players: Player[], games: Game[]) {
+    return players.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>((acc, player) => {
+        acc[player.id] = calculateStats(games, null, null, player.id);
+        return acc;
+    }, {});
+}
+
+export function getGenderStats(players: Player[], games: Game[]) {
+    return players.reduce<{ [key: string]: ReturnType<typeof calculateStats> }>((acc, player) => {
+        const playerStat = calculateStats(games, null, null, player.id);
+        acc[player.genderMatch] = sumObjectsByKey(acc[player.genderMatch], playerStat);
+        return acc;
+    }, {});
+}
+
+export function getLineStats(lines: Line[], games: Game[]) {
+    return lines.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>((acc, line) => {
+        for (const player of line.primaryPlayers) {
+            const playerStat = calculateStats(games, line.id, null, player.id);
+            acc[line.id] = sumObjectsByKey(acc[line.id], playerStat);
+        }
+        return acc;
+    }, {});
 }
