@@ -15,6 +15,19 @@ type Game = Prisma.GameGetPayload<{
     };
 }>;
 
+
+export const sumObjectsByKey = (...objs: any[]) => {
+    const res = objs.reduce((a, b) => {
+        for (let k in b) {
+            if (b.hasOwnProperty(k)) {
+                a[k] = (a[k] || 0) + b[k];
+            }
+        }
+        return a;
+    }, {});
+    return res;
+}
+
 export function calculateStats(games: Array<Game>, gameId: Number | null, lineId: Number | null, playerId: Number) {
     let stats = {
         timePlayed: 0,

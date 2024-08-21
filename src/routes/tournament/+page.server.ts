@@ -6,7 +6,15 @@ import { z } from 'zod';
 import { handleZodError } from '$lib/zod';
 
 export const load: PageServerLoad = async () => {
-    let tournaments = await prisma.tournament.findMany({});
+    let tournaments = await prisma.tournament.findMany({
+        include: {
+            lines: {
+                include: {
+                    primaryPlayers: true,
+                },
+            },
+        },
+    });
     let players = await prisma.player.findMany({});
     let games = await prisma.game.findMany({
         include: {

@@ -1,14 +1,36 @@
 <script lang="ts">
     import { base } from '$app/paths';
+    import StatTable from './[tournamentId]/statTable.svelte';
 
     export let data;
 
-    import { calculateStats } from '$lib/stats.js';
+    import { sumObjectsByKey, calculateStats } from '$lib/stats.js';
 
     let playerStats = data.players.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>((acc, player) => {
         acc[player.id] = calculateStats(data.games, null, null, player.id);
         return acc;
     }, {});
+
+    let genderStats = data.players.reduce<{ [key: string]: ReturnType<typeof calculateStats> }>(
+        (acc, player) => {
+            const playerStat = calculateStats(data.games, null, null, player.id);
+            acc[player.genderMatch] = sumObjectsByKey(acc[player.genderMatch], playerStat);
+            return acc;
+        },
+        {},
+    );
+
+    let lineStats = data.tournaments.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>((acc, tournament) => {
+        for (const line of tournament.lines) {
+            for (const player of line.primaryPlayers) {
+                const playerStat = calculateStats(data.games, null, line.id, player.id);
+                acc[line.id] = sumObjectsByKey(acc[line.id], playerStat);
+            }
+        }
+        return acc;
+    }, {});
+
+
 </script>
 
 <a href="{base}/">Home</a>
@@ -39,7 +61,7 @@
 <table>
     <thead>
         <tr>
-            <th>Player</th>
+            <th>Name</th>
             <th>Match</th>
             <th>Time Played</th>
             <th>Points Played</th>
@@ -75,37 +97,21 @@
         {#each data.players as player}
             {@const stats = playerStats[player.id]}
             <tr>
-                <td>{player.name}</td>
-                <td>{player.genderMatch}</td>
-                <td>{stats.timePlayed}</td>
-                <td>{stats.pointsPlayed}</td>
-                <td>{stats.touchLook}</td>
-                <td>{stats.pointsWithTouchLook}</td>
-                <td>{Math.floor((stats.pointsWithTouchLook / stats.pointsPlayed) * 100)}</td>
-                <td>{stats.offenseTouches}</td>
-                <td></td>
-                <td>{stats.oPointsPlayed}</td>
-                <td>{stats.dPointsPlayed}</td>
-                <td>{stats.oPointsWon}</td>
-                <td>{stats.dPointsWon}</td>
-                <td>{stats.oPointsWon + stats.dPointsWon}</td>
-                <td>{Math.floor((stats.oPointsWon / stats.oPointsPlayed) * 100)}</td>
-                <td>{Math.floor((stats.dPointsWon / stats.dPointsPlayed) * 100)}</td>
-                <td>{Math.floor((stats.totalPointsWon / stats.pointsPlayed) * 100)}</td>
-                <td>{stats.possessions}</td>
-                <td>{stats.oPointsPossessions}</td>
-                <td>{stats.dPointsPossessions}</td>
-                <td>{stats.oEfficiency}</td>
-                <td>{stats.oPtEfficiencyPct}</td>
-                <td>{stats.dPtEfficiencyPct}</td>
-                <td>{stats.hockey}</td>
-                <td>{stats.assists}</td>
-                <td>{stats.goals}</td>
-                <td>{stats.plusMinus}</td>
-                <td></td>
-                <td>{stats.blocks}</td>
-                <td></td>
+                <StatTable stats={playerStats[player.id]} name={player.name} gender={player.genderMatch} />
             </tr>
         {/each}
+        {#each data.tournaments as tournament}
+            {#each tournament.lines as line}
+                <tr style="background-color: yellow">
+                    <StatTable stats={lineStats[line.id]} name={line.name} gender="" />
+                </tr>
+            {/each}
+        {/each}
+        <tr style="background-color: aqua">
+            <StatTable stats={genderStats["mmp"]} name="MMP" gender="mmp" />
+        </tr>
+        <tr style="background-color: pink">
+            <StatTable stats={genderStats["fmp"]} name="FMP" gender="fmp" />
+        </tr>
     </tbody>
 </table>
