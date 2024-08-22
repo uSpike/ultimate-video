@@ -5,20 +5,28 @@
 
     type Player = PageData['tournament']['players'][number];
 
-    export let players: Player[] = [];
+    export let allPlayers: Player[] = [];
+    export let pointPlayers: Player[] = [];
     export let selectedPrimaryPlayer: Player | null = null;
     export let selectedSecondaryPlayer: Player | null = null;
     export let selectedNotes: PageData['actionTypes'][number]['notes'] = [];
     export let selectedComment: string | null;
 
     export let actionType: PageData['actionTypes'][number];
+
+    let secondaryPlayerList: Player[] = pointPlayers;
+    $: if (actionType.type === 'Injury') {
+        secondaryPlayerList = allPlayers;
+    } else {
+        secondaryPlayerList = pointPlayers;
+    }
 </script>
 
 {#if actionType.requirePrimaryPlayer !== 'false'}
     <div style="clear: both">
         <span>{actionType.primaryPlayerLabel}</span>
         <form>
-            {#each players as player}
+            {#each pointPlayers as player}
                 <input type="radio" value={player} id={`primary ${player.name}`} bind:group={selectedPrimaryPlayer} />
                 <label for={`primary ${player.name}`}>{player.name}</label>
             {/each}
@@ -28,7 +36,7 @@
         <div style="clear: both">
             <span>{actionType.secondaryPlayerLabel}</span>
             <form>
-                {#each players as player}
+                {#each secondaryPlayerList as player}
                     <input
                         type="radio"
                         value={player}

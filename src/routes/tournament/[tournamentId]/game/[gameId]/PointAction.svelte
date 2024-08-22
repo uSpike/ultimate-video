@@ -380,7 +380,8 @@
             <hr />
             {#if selectedActionType}
                 <PointActionButton
-                    bind:players={selectedPlayers}
+                    bind:allPlayers={data.tournament.players}
+                    bind:pointPlayers={selectedPlayers}
                     bind:selectedPrimaryPlayer
                     bind:selectedSecondaryPlayer
                     bind:selectedNotes
