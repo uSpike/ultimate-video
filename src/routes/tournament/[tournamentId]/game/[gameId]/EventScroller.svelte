@@ -20,7 +20,7 @@
     function scrollToCurrentEvent(time: number) {
         if (points.length === 0) return;
         for (let point of points) {
-            for (let i = 1; i < points.length; i++) {
+            for (let i = 1; i < point.actions.length; i++) {
                 let action = point.actions[i];
                 if (action.time >= time) {
                     // scroll to active event
