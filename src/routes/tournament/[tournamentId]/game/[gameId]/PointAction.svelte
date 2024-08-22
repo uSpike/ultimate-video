@@ -290,6 +290,10 @@
             player.lines.find((line) => line.id === selectedLine?.id),
         );
     }
+
+    function deleteAction(action: Action) {
+        selectedActions = selectedActions.filter((a) => a !== action);
+    }
 </script>
 
 <div class="box">
@@ -393,7 +397,28 @@
         {/if}
     </div>
 
-    <div class="col-2" style="height: 20vh; overflow-y: scroll">
+    <div class="col-2">
+        <ul>
+        {#each selectedActions as action}
+            <li>
+                <button on:click={() => deleteAction(action)}>Delete</button>
+                {action.time}: {action.type.type} -
+                {#if action.primaryPlayer}
+                    {action.primaryPlayer.name}
+                {/if}
+                {#if action.secondaryPlayer}
+                    - {action.secondaryPlayer.name}
+                {/if}
+                {action.notes.join(', ')}
+                {#if action.comment}
+                    "{action.comment}"
+                {/if}
+            </li>
+        {/each}
+        </ul>
+    </div>
+
+    <div class="col-3" style="height: 20vh; overflow-y: scroll">
         {#if queuedPoint.started}
             <h2>
                 Queued {@html getTimeFormattedLink(queuedPoint.startTime)} - {@html getTimeFormattedLink(currentTime)}
@@ -423,12 +448,16 @@
     }
     .col-1 {
         float: 1;
-        min-width: 70vw;
+        min-width: 60vw;
     }
     .col-2 {
         float: 1;
-        min-width: 25vw;
+        min-width: 20vw;
         overflow-y: auto;
-        padding: 10px;
+    }
+    .col-3 {
+        float: 1;
+        min-width: 20vw;
+        overflow-y: auto;
     }
 </style>
