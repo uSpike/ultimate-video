@@ -60,8 +60,7 @@
             <li>
                 <form method="POST">
                     <input type="hidden" name="id" value={note.id} />
-                    <input type="hidden" name="name" value={note.name} />
-                    {note.name}:
+                    <input type="text" name="name" value={note.name} />
                     <input type="text" name="description" value={note.description} />
                     <input type="submit" value="Update" formaction="?/updateActionNoteType" />
                     <input type="submit" value="Delete" formaction="?/removeActionNoteType" />
