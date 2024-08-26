@@ -144,7 +144,7 @@ export function getGenderStats(players: Player[], games: Game[]) {
 export function getLineStats(lines: Line[], games: Game[]) {
     return lines.reduce<{ [key: number]: ReturnType<typeof calculateStats> }>((acc, line) => {
         for (const player of line.primaryPlayers) {
-            const playerStat = calculateStats(games, line.id, null, player.id);
+            const playerStat = calculateStats(games, null, line.id, player.id);
             acc[line.id] = sumObjectsByKey(acc[line.id], playerStat);
         }
         return acc;
