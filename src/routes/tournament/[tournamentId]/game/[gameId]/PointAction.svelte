@@ -125,6 +125,11 @@
         assert(selectedOD);
         assert(selectedLine);
 
+        if (queuedPoint.startTime < currentTime) {
+            alert('Cannot submit a point with end time before start time.');
+            return;
+        }
+
         let form = new FormData();
         form.append('gameId', String(data.game.id));
         form.append('offenseDefense', selectedOD);
