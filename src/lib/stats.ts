@@ -60,6 +60,7 @@ export function calculateStats(games: Array<Game>, gameId: Number | null, lineId
         goals: 0,
         plusMinus: 0,
         blocks: 0,
+        timeWithDisc: 0,
     };
     for (let game of games) {
         if (gameId != null && game.id != gameId) continue;
@@ -79,11 +80,21 @@ export function calculateStats(games: Array<Game>, gameId: Number | null, lineId
                 stats.dPointsPlayed++;
             }
 
+            let hasPossession = false;
+
+            let actionsByTime = point.actions.sort((a, b) => a.time - b.time);
+
             for (let i = 0; i < point.actions.length; i++) {
-                let action = point.actions[i];
-                let lastAction = point.actions[i - 1];
+                let action = actionsByTime[i];
+                let lastAction = actionsByTime[i - 1];
                 let isPP = action.primaryPlayerId == playerId;
                 let isSP = action.secondaryPlayerId == playerId;
+
+                if (hasPossession) {
+                    stats.timeWithDisc += action.time - (lastAction?.time || point.startTime);
+                }
+
+                hasPossession = false;
 
                 switch (action.type.type) {
                     case 'Completion':
@@ -92,14 +103,16 @@ export function calculateStats(games: Array<Game>, gameId: Number | null, lineId
                             stats.pointsWithTouchLook++;
                             didRecordTouchLookPoint = true;
                         }
+                        if (isSP) {
+                            hasPossession = true;
+                            stats.possessions++;
+                        }
                         break;
                     case 'Turnover':
                         if (isSP) stats.touchLook++;
                         break;
                     case 'Defended':
-                        if (isPP) {
-                            stats.blocks++;
-                        }
+                        if (isPP) stats.blocks++;
                         break;
                     case 'Goal':
                         stats.totalPointsWon++;

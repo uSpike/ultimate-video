@@ -46,6 +46,9 @@
             <th>+/- Touch-Look</th>
             <th>Blocks</th>
             <th>Pressured</th>
+            <th>Possessions</th>
+            <th>Time with disc</th>
+            <th>Avg time with disc</th>
         </tr>
     </thead>
     <tbody>

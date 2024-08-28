@@ -404,22 +404,22 @@
 
     <div class="col-2">
         <ul>
-        {#each selectedActions as action}
-            <li>
-                <button on:click={() => deleteAction(action)}>Delete</button>
-                {action.time}: {action.type.type} -
-                {#if action.primaryPlayer}
-                    {action.primaryPlayer.name}
-                {/if}
-                {#if action.secondaryPlayer}
-                    - {action.secondaryPlayer.name}
-                {/if}
-                {action.notes.join(', ')}
-                {#if action.comment}
-                    "{action.comment}"
-                {/if}
-            </li>
-        {/each}
+            {#each selectedActions as action}
+                <li>
+                    <button on:click={() => deleteAction(action)}>Delete</button>
+                    {action.time}: {action.type.type} -
+                    {#if action.primaryPlayer}
+                        {action.primaryPlayer.name}
+                    {/if}
+                    {#if action.secondaryPlayer}
+                        - {action.secondaryPlayer.name}
+                    {/if}
+                    {action.notes.join(', ')}
+                    {#if action.comment}
+                        "{action.comment}"
+                    {/if}
+                </li>
+            {/each}
         </ul>
     </div>
 

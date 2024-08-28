@@ -35,6 +35,9 @@
     <td></td>
     <td>{stats.blocks}</td>
     <td></td>
+    <td>{stats.possessions}</td>
+    <td>{stats.timeWithDisc}</td>
+    <td>{(stats.timeWithDisc / stats.possessions).toFixed(1)}</td>
 {/if}
 
 <style>
