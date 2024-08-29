@@ -24,6 +24,7 @@ export const load: PageServerLoad = async () => {
                     actions: {
                         include: {
                             type: true,
+                            notes: true,
                         },
                     },
                 },

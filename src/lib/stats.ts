@@ -8,6 +8,7 @@ export type Game = Prisma.GameGetPayload<{
                 actions: {
                     include: {
                         type: true;
+                        notes: true;
                     };
                 };
             };
@@ -91,7 +92,15 @@ export function calculateStats(games: Array<Game>, gameId: Number | null, lineId
                 let isSP = action.secondaryPlayerId == playerId;
 
                 if (hasPossession) {
-                    stats.timeWithDisc += action.time - (lastAction?.time || point.startTime);
+                    let timeWithDisc = action.time - (lastAction?.time || point.startTime);
+
+                    if (!action.notes.find((n) => n.name == 'huck')) {
+                        // don't include hucks
+                        if (timeWithDisc <= 10) {
+                            // discard outliers for foul calls, etc
+                            stats.timeWithDisc += timeWithDisc;
+                        }
+                    }
                 }
 
                 hasPossession = false;
