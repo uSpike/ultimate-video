@@ -4,6 +4,11 @@
     import StatTable from './statTable.svelte';
 
     export let data;
+
+    function getTimeFormattedLink(gameId: number, time: number) {
+        let text = new Date(time * 1000).toISOString().slice(11, 19);
+        return `<a href="${base}/tournament/${data.tournament.id}/game/${gameId}?time=${time}">${text}</a>`;
+    }
 </script>
 
 <a href="{base}/">Home</a> &gt;
@@ -78,6 +83,30 @@
     <input type="text" name="tournamentId" value={data.tournament.id} hidden />
     <button type="submit">Add Line</button>
 </form>
+
+<h2>Highlights</h2>
+<ul>
+    {#each data.games as game}
+        {#each game.points as point}
+            {#each point.actions as action}
+                {#if action.type.type === 'Highlight'}
+                    <li>
+                        {game.opponent}: {@html getTimeFormattedLink(game.id, action.time)}
+                        {#if action.primaryPlayer}
+                            - {action.primaryPlayer.name}
+                        {/if}
+                        {#if action.secondaryPlayer}
+                            - {action.secondaryPlayer.name}
+                        {/if}
+                        {#if action.comment}
+                            - {action.comment}
+                        {/if}
+                    </li>
+                {/if}
+            {/each}
+        {/each}
+    {/each}
+</ul>
 
 <h2>Stats</h2>
 

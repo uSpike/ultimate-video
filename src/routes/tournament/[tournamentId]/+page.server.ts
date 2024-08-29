@@ -24,6 +24,8 @@ export const load: PageServerLoad = async ({ params }) => {
                         include: {
                             type: true,
                             notes: true,
+                            primaryPlayer: true,
+                            secondaryPlayer: true,
                         },
                     },
                 },
