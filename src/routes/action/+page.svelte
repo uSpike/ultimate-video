@@ -1,5 +1,8 @@
 <script lang="ts">
     import { base } from '$app/paths';
+    import { enhance } from '$app/forms';
+
+    import { confirmForm, handleSubmitErrors } from '$lib/form';
 
     export let data;
 
@@ -12,7 +15,7 @@
 <h1>Actions</h1>
 {#each data.actionTypes as actionType}
     <h2>{actionType.type}</h2>
-    <form method="POST">
+    <form method="POST" action="?/updateActionType" style="display:inline" use:enhance={handleSubmitErrors}>
         <ul>
             <li>
                 Description:
@@ -51,24 +54,46 @@
         </ul>
         <input type="hidden" name="id" value={actionType.id} />
         <input type="hidden" name="type" value={actionType.type} />
-        <input type="submit" value="Update" formaction="?/updateActionType" />
-        <input type="submit" value="Delete" formaction="?/removeActionType" />
+        <button type="submit">Update</button>
+    </form>
+    <form method="POST" action="?/removeActionType" style="display:inline" use:enhance={handleSubmitErrors}>
+        <input type="hidden" name="id" value={actionType.id} />
+        <button
+            type="submit"
+            value="Delete"
+            on:click={confirmForm(`Are you sure you want to delete ${actionType.type}?`)}>Delete</button
+        >
     </form>
     <p>Notes</p>
     <ul>
         {#each actionType.notes as note}
             <li>
-                <form method="POST">
+                <form
+                    method="POST"
+                    action="?/updateActionNoteType"
+                    style="display:inline"
+                    use:enhance={handleSubmitErrors}
+                >
                     <input type="hidden" name="id" value={note.id} />
                     <input type="text" name="name" value={note.name} />
                     <input type="text" name="description" value={note.description} />
-                    <input type="submit" value="Update" formaction="?/updateActionNoteType" />
-                    <input type="submit" value="Delete" formaction="?/removeActionNoteType" />
+                    <button type="submit">Update</button>
+                </form>
+                <form
+                    method="POST"
+                    action="?/removeActionNoteType"
+                    style="display:inline"
+                    use:enhance={handleSubmitErrors}
+                >
+                    <input type="hidden" name="noteTypeId" value={note.id} />
+                    <button type="submit" on:click={confirmForm(`Are you sure you want to delete ${note.name}?`)}
+                        >Delete</button
+                    >
                 </form>
             </li>
         {/each}
     </ul>
-    <form action="?/addActionNoteType" method="POST">
+    <form action="?/addActionNoteType" method="POST" use:enhance={handleSubmitErrors}>
         <input type="hidden" name="typeId" value={actionType.id} />
         <input type="text" name="name" placeholder="Name" />
         <input type="text" name="description" placeholder="Description" />
@@ -77,7 +102,7 @@
 {/each}
 
 <h3>Add action type</h3>
-<form action="?/addActionType" method="POST">
+<form action="?/addActionType" method="POST" use:enhance={handleSubmitErrors}>
     <input type="text" name="type" placeholder="Type" />
     <input type="text" name="description" placeholder="Description" />
     <select name="requirePrimaryPlayer" bind:value={requirePrimaryPlayer}>

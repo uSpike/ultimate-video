@@ -1,5 +1,8 @@
 <script lang="ts">
     import { base } from '$app/paths';
+    import { enhance } from '$app/forms';
+
+    import { confirmForm, handleSubmitErrors } from '$lib/form';
 
     export let data;
 </script>
@@ -12,12 +15,18 @@
 <ul>
     {#each data.players as player}
         <li>
-            <span>{player.name}</span>
+            <form method="POST" action="?/removePlayer" use:enhance={handleSubmitErrors}>
+                <input type="text" name="playerId" value={player.id} hidden />
+                <span>{player.name}</span>
+                <button type="submit" on:click={confirmForm(`Are you sure you want to remove ${player.name}`)}
+                    >Remove</button
+                >
+            </form>
         </li>
     {/each}
 </ul>
 
-<form method="POST" action="?/newPlayer">
+<form method="POST" action="?/newPlayer" use:enhance={handleSubmitErrors}>
     <input type="text" name="name" placeholder="Name" />
     <select name="genderMatch">
         <option value="fmp">FMP</option>

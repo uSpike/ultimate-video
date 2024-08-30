@@ -1,10 +1,9 @@
 import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
-import { handlePrismaError } from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
-import { handleZodError } from '$lib/zod';
+import { handleForm } from '$lib/server-form';
 
 export const load: PageServerLoad = async ({ params }) => {
     let tournament = await prisma.tournament.findUniqueOrThrow({
@@ -58,6 +57,10 @@ const addLineSchema = zfd.formData({
     tournamentId: zfd.numeric(z.number().min(0)),
 });
 
+const removeLineSchema = zfd.formData({
+    lineId: zfd.numeric(z.number().min(0)),
+});
+
 const addPlayerToLineSchema = zfd.formData({
     lineId: zfd.numeric(z.number().min(0)),
     playerId: zfd.numeric(z.number().min(0)),
@@ -80,111 +83,80 @@ const removePlayerSchema = zfd.formData({
 
 export const actions = {
     addGame: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = addGameSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), addGameSchema, async (data) => {
             await prisma.game.create({
                 data: {
-                    opponent: parsed.data.opponent,
-                    date: parsed.data.date,
-                    tournament: { connect: { id: parsed.data.tournamentId } },
-                    videoFile: parsed.data.videoFile,
+                    opponent: data.opponent,
+                    date: data.date,
+                    tournament: { connect: { id: data.tournamentId } },
+                    videoFile: data.videoFile,
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
     addLine: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = addLineSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), addLineSchema, async (data) => {
             await prisma.playerLine.create({
                 data: {
-                    name: parsed.data.name,
-                    tournament: { connect: { id: parsed.data.tournamentId } },
+                    name: data.name,
+                    tournament: { connect: { id: data.tournamentId } },
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
+    },
+    removeLine: async ({ request }) => {
+        return await handleForm(await request.formData(), removeLineSchema, async (data) => {
+            await prisma.playerLine.delete({ where: { id: data.lineId } });
+        });
     },
     addPlayerToLine: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = addPlayerToLineSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), addPlayerToLineSchema, async (data) => {
             await prisma.playerLine.update({
-                where: { id: parsed.data.lineId },
+                where: { id: data.lineId },
                 data: {
                     primaryPlayers: {
-                        connect: { id: parsed.data.playerId },
+                        connect: { id: data.playerId },
                     },
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
     removePlayerFromLine: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = removePlayerFromLineSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), removePlayerFromLineSchema, async (data) => {
             await prisma.playerLine.update({
-                where: { id: parsed.data.lineId },
+                where: { id: data.lineId },
                 data: {
                     primaryPlayers: {
-                        disconnect: { id: parsed.data.playerId },
+                        disconnect: { id: data.playerId },
                     },
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
     addPlayer: async ({ request }) => {
         // connect player to tournament
-        const data = await request.formData();
-        const parsed = addPlayerSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), addPlayerSchema, async (data) => {
             await prisma.player.update({
-                where: { id: parsed.data.playerId },
+                where: { id: data.playerId },
                 data: {
                     tournaments: {
-                        connect: { id: parsed.data.tournamentId },
+                        connect: { id: data.tournamentId },
                     },
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
     removePlayer: async ({ request }) => {
         // disconnect player from tournament
-        const data = await request.formData();
-        const parsed = removePlayerSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), removePlayerSchema, async (data) => {
             await prisma.player.update({
-                where: { id: parsed.data.playerId },
+                where: { id: data.playerId },
                 data: {
                     tournaments: {
-                        disconnect: { id: parsed.data.tournamentId },
+                        disconnect: { id: data.tournamentId },
                     },
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
 } satisfies Actions;

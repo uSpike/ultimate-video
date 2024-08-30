@@ -1,9 +1,8 @@
-import { handlePrismaError } from '$lib/prisma';
 import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
 import { zfd } from 'zod-form-data';
 import { z } from 'zod';
-import { handleZodError } from '$lib/zod';
+import { handleForm } from '$lib/server-form';
 
 export const load: PageServerLoad = async () => {
     const data = {
@@ -19,19 +18,20 @@ const newPlayerSchema = zfd.formData({
 
 export const actions = {
     newPlayer: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = newPlayerSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        await handleForm(await request.formData(), newPlayerSchema, async (data) => {
             await prisma.player.create({
                 data: {
-                    name: parsed.data.name,
-                    genderMatch: parsed.data.genderMatch,
+                    name: data.name,
+                    genderMatch: data.genderMatch,
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
+    },
+    removePlayer: async ({ request }) => {
+        await handleForm(await request.formData(), zfd.formData({ playerId: zfd.numeric() }), async (data) => {
+            await prisma.player.delete({
+                where: { id: data.playerId },
+            });
+        });
     },
 } satisfies Actions;

@@ -3,7 +3,7 @@ import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
 import { zfd } from 'zod-form-data';
 import { z } from 'zod';
-import { handleZodError } from '$lib/zod';
+import { handleForm } from '$lib/server-form';
 
 export const load: PageServerLoad = async () => {
     let tournaments = await prisma.tournament.findMany({
@@ -49,33 +49,21 @@ const removeTournamentSchema = zfd.formData({
 
 export const actions = {
     addTournament: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = addTournamentSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), addTournamentSchema, async (data) => {
             await prisma.tournament.create({
                 data: {
-                    name: parsed.data.name,
+                    name: data.name,
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
     deleteTournament: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = removeTournamentSchema.safeParse(data);
-        handleZodError(parsed);
-
-        try {
+        return await handleForm(await request.formData(), removeTournamentSchema, async (data) => {
             await prisma.tournament.delete({
                 where: {
-                    id: parsed.data.tournamentId,
+                    id: data.tournamentId,
                 },
             });
-        } catch (e) {
-            handlePrismaError(e);
-        }
+        });
     },
 } satisfies Actions;

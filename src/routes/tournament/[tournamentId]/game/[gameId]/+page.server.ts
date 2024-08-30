@@ -1,9 +1,9 @@
-import { fail, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import type { Actions, PageServerLoad } from './$types';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
-import { handleZodError } from '$lib/zod';
+import { handleForm } from '$lib/server-form';
 
 export const load: PageServerLoad = async ({ params }) => {
     const data = {
@@ -84,45 +84,41 @@ const deletePointSchema = zfd.formData({
 
 export const actions = {
     submitPoint: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = submitPointSchema.safeParse(data);
-        handleZodError(parsed);
-
-        await prisma.gamePoint.create({
-            data: {
-                game: { connect: { id: parsed.data.gameId } },
-                line: { connect: { id: parsed.data.lineId } },
-                startTime: parsed.data.startTime,
-                endTime: parsed.data.endTime,
-                offenseDefense: parsed.data.offenseDefense,
-                players: {
-                    connect: parsed.data.players.map((num) => ({ id: num })),
+        return await handleForm(await request.formData(), submitPointSchema, async (data) => {
+            await prisma.gamePoint.create({
+                data: {
+                    game: { connect: { id: data.gameId } },
+                    line: { connect: { id: data.lineId } },
+                    startTime: data.startTime,
+                    endTime: data.endTime,
+                    offenseDefense: data.offenseDefense,
+                    players: {
+                        connect: data.players.map((num) => ({ id: num })),
+                    },
+                    actions: {
+                        create: data.actions.map((action) => ({
+                            type: { connect: { id: action.typeId } },
+                            time: action.time,
+                            notes: { connect: action.notes.map((note) => ({ id: note })) },
+                            comment: action.comment,
+                            offenseDefense: action.offenseDefense,
+                            primaryPlayer: action.primaryPlayerId
+                                ? { connect: { id: action.primaryPlayerId } }
+                                : undefined,
+                            secondaryPlayer: action.secondaryPlayerId
+                                ? { connect: { id: action.secondaryPlayerId } }
+                                : undefined,
+                        })),
+                    },
                 },
-                actions: {
-                    create: parsed.data.actions.map((action) => ({
-                        type: { connect: { id: action.typeId } },
-                        time: action.time,
-                        notes: { connect: action.notes.map((note) => ({ id: note })) },
-                        comment: action.comment,
-                        offenseDefense: action.offenseDefense,
-                        primaryPlayer: Number.isInteger(action.primaryPlayerId)
-                            ? { connect: { id: action.primaryPlayerId } }
-                            : undefined,
-                        secondaryPlayer: Number.isInteger(action.secondaryPlayerId)
-                            ? { connect: { id: action.secondaryPlayerId } }
-                            : undefined,
-                    })),
-                },
-            },
+            });
         });
     },
     deletePoint: async ({ request }) => {
-        const data = await request.formData();
-        const parsed = deletePointSchema.safeParse(Object.fromEntries(data));
-        handleZodError(parsed);
-
-        await prisma.gamePoint.delete({
-            where: { id: parsed.data.pointId },
+        return await handleForm(await request.formData(), deletePointSchema, async (data) => {
+            await prisma.gamePoint.delete({
+                where: { id: data.pointId },
+            });
         });
     },
 } satisfies Actions;
